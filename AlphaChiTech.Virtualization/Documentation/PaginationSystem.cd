@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Comment CommentText="Messages to invoke on UI thread">
+    <Position X="9.74" Y="2.906" Height="0.667" Width="2.294" />
+  </Comment>
+  <Comment CommentText="Action that runs on the Dispatcher Timer">
+    <Position X="9.531" Y="10.344" Height="0.667" Width="2.294" />
+  </Comment>
+  <Class Name="AlphaChiTech.Virtualization.PaginationManager&lt;T&gt;">
+    <Position X="3" Y="2.75" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AGEEAICAAAZEQCBAIAkEJASQIoIwAIAgAUBIMAGkAQU=</HashCode>
+      <FileName>PaginationManager.cs</FileName>
+    </TypeIdentifier>
+    <ShowAsAssociation>
+      <Field Name="_Provider" />
+      <Field Name="_Reclaimer" />
+    </ShowAsAssociation>
+    <ShowAsCollectionAssociation>
+      <Field Name="_Deltas" />
+      <Field Name="_Pages" />
+    </ShowAsCollectionAssociation>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="AlphaChiTech.Virtualization.PageDelta">
+    <Position X="6.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PageDelta.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AlphaChiTech.Virtualization.SourcePage&lt;T&gt;">
+    <Position X="6.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BUAAAAAAABAQIAAAAACAAIABAAIAAQEIiAAIAAAAAAA=</HashCode>
+      <FileName>SourcePage.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="AlphaChiTech.Virtualization.PageReclaimOnTouched&lt;T&gt;">
+    <Position X="6.5" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAAACAAAACAAAAAAAAAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>PageReclaimOnTouched.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="AlphaChiTech.Virtualization.ExecuteResetWA&lt;T&gt;" Collapsed="true">
+    <Position X="9.75" Y="3.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAAAAAAAIAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>ExecuteResetWA.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AlphaChiTech.Virtualization.PlaceholderReplaceWA&lt;T&gt;" Collapsed="true">
+    <Position X="9.75" Y="4.75" Width="2.25" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAAAAAAAAAABAAAAgAAAgAAIAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PlaceholderReplaceWA.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="AlphaChiTech.Virtualization.ReclaimPagesWA" Collapsed="true">
+    <Position X="9.5" Y="11.25" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAgAAAAAEAAAAIAAAAAAAAAAQAAAA=</HashCode>
+      <FileName>ReclaimPagesWA.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="AlphaChiTech.Virtualization.ISourcePage&lt;T&gt;" Collapsed="true">
+    <Position X="6.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BEAAAAAAAAAQIAAAAACAAAABAAIAAQEIiAAAAAAAAAA=</HashCode>
+      <FileName>ISourcePage.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="AlphaChiTech.Virtualization.IPagedSourceProvider&lt;T&gt;">
+    <Position X="0.5" Y="5.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>IPagedSourceProvider.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="AlphaChiTech.Virtualization.IPageReclaimer&lt;T&gt;" Collapsed="true">
+    <Position X="6.5" Y="10.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAAACAAAACAAAAAAAAAAAAAAAAAAAIAAA=</HashCode>
+      <FileName>IPageReclaimer.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Delegate Name="AlphaChiTech.Virtualization.OnCountChanged" Collapsed="true">
+    <Position X="3" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>PaginationManager.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
