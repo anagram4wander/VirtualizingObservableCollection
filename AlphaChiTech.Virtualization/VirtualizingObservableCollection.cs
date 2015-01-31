@@ -262,7 +262,6 @@ namespace AlphaChiTech.Virtualization
 
         #endregion Public Properties
 
-
         #region INotifyCollectionChanged Implementation
 
         public event NotifyCollectionChangedEventHandler CollectionChanged;
@@ -282,6 +281,13 @@ namespace AlphaChiTech.Virtualization
         #region INotifyPropertyChanged implementation
 
         public event PropertyChangedEventHandler PropertyChanged;
+
+        private static PropertyChangedEventArgs _PC_CountArgs = new PropertyChangedEventArgs("Count"); 
+
+        private void OnCountTouched()
+        {
+            RaisePropertyChanged(_PC_CountArgs);
+        }
 
         protected void RaisePropertyChanged(PropertyChangedEventArgs args)
         {
@@ -371,7 +377,7 @@ namespace AlphaChiTech.Virtualization
 
             _HasGotCount = true;
             _LocalCount = count;
-
+            OnCountTouched();
         }
 
         void InternalClear()
@@ -421,6 +427,8 @@ namespace AlphaChiTech.Virtualization
             NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, _LocalCount);
             RaiseCollectionChangedEvent(args);
 
+            OnCountTouched();
+
             return _LocalCount;
         }
 
@@ -452,6 +460,8 @@ namespace AlphaChiTech.Virtualization
 
             NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
             RaiseCollectionChangedEvent(args);
+
+            OnCountTouched();
         }
 
         bool InternalRemoveAt(int index, object timestamp = null)
@@ -471,6 +481,8 @@ namespace AlphaChiTech.Virtualization
 
                 NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
                 RaiseCollectionChangedEvent(args);
+
+                OnCountTouched();
 
                 return true;
             }
