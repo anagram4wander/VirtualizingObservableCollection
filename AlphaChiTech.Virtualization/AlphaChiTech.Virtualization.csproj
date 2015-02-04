@@ -52,6 +52,7 @@
     <Compile Include="IEditableProvider.cs" />
     <Compile Include="IItemSourceProvider.cs" />
     <Compile Include="IItemSourceProviderAsync.cs" />
+    <Compile Include="INotifyCountChanged.cs" />
     <Compile Include="IPagedSourceProvider.cs" />
     <Compile Include="IPagedSourceProviderAsync.cs" />
     <Compile Include="IPageExpiryComparer.cs" />

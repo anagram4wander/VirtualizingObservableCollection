@@ -12,7 +12,7 @@ namespace AlphaChiTech.Virtualization
 
         T GetPlaceHolder(int page, int offset);
 
-        Task<int> Count { get; }
+        Task<int> GetCount();
 
         Task<int> IndexOf(T item);
 

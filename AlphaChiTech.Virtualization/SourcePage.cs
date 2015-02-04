@@ -27,6 +27,7 @@ namespace AlphaChiTech.Virtualization
         /// </value>
         public int ItemsPerPage { get; set; }
 
+        private List<int> _ReplaceNeededList = new List<int>();
 
         /// <summary>
         /// Gets a value indicating whether [can reclaim page].
@@ -36,7 +37,12 @@ namespace AlphaChiTech.Virtualization
         /// </value>
         public bool CanReclaimPage
         {
-            get { return true; }
+            get
+            {
+                bool ret = true;
+                if (this._PageFetchState == PageFetchStateEnum.Placeholders) ret = false;
+                return ret;
+            }
         }
 
         /// <summary>
@@ -81,9 +87,20 @@ namespace AlphaChiTech.Virtualization
         {
             T ret = default(T);
 
+            if (this._PageFetchState == PageFetchStateEnum.Placeholders) _ReplaceNeededList.Add(offset);
+
             if (_Items.Count > offset) ret = _Items[offset];
 
             LastTouch = DateTime.Now;
+
+            return ret;
+        }
+
+        public bool ReplaceNeeded(int offset)
+        {
+            bool ret = false;
+
+            if (_ReplaceNeededList.Contains(offset)) ret = true;
 
             return ret;
         }

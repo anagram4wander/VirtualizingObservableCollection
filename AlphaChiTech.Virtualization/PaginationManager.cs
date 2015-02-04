@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -7,9 +8,8 @@ using System.Threading.Tasks;
 
 namespace AlphaChiTech.Virtualization
 {
-    public delegate void OnCountChanged(object sender);
 
-    public class PaginationManager<T> : IItemSourceProvider<T>, IEditableProvider<T>, IReclaimableService
+    public class PaginationManager<T> : IItemSourceProvider<T>, IEditableProvider<T>, IReclaimableService, INotifyCountChanged
     {
         Dictionary<int, ISourcePage<T>> _Pages = new Dictionary<int, ISourcePage<T>>();
 
@@ -20,6 +20,9 @@ namespace AlphaChiTech.Virtualization
         IPageReclaimer<T> _Reclaimer = null;
 
         IPageExpiryComparer _ExpiryComparer = null;
+
+        bool _HasGotCount = false;
+        int _LocalCount = 0;
 
         public IPageExpiryComparer ExpiryComparer
         {
@@ -97,6 +100,7 @@ namespace AlphaChiTech.Virtualization
         {
             CancellationTokenSource cts = new CancellationTokenSource();
 
+            
             CancelPageRequest(page);
 
             lock (_PageLock)
@@ -586,23 +590,45 @@ namespace AlphaChiTech.Virtualization
         /// <value>
         /// The count.
         /// </value>
-        public int Count
+        public int GetCount(bool asyncOK)
         {
-            get
-            {
+           
                 int ret = 0;
 
-                if (this.Provider != null)
+                if (!_HasGotCount)
                 {
-                    ret = this.Provider.Count;
-                }
-                else if (this.ProviderAsync != null)
-                {
-                    ret = this.ProviderAsync.Count.Result;
+                    if (this.Provider != null)
+                    {
+                        ret = this.Provider.Count;
+                    }
+                    else if (this.ProviderAsync != null)
+                    {
+                        if (!asyncOK)
+                        {
+                            ret = this.ProviderAsync.GetCount().Result;
+                        }
+                        else
+                        {
+                            ret = 0;
+                            GetCountAsync();
+                        }
+                    }
+
+                    _HasGotCount = true;
+                    _LocalCount = ret;
                 }
 
-                return ret;
-            }
+                return _LocalCount;
+            
+        }
+
+        private async void GetCountAsync()
+        {
+            int ret = await this.ProviderAsync.GetCount();
+            _HasGotCount = true;
+            _LocalCount = ret;
+
+            this.RaiseCountChanged(true, _LocalCount);
         }
 
         /// <summary>
@@ -658,19 +684,19 @@ namespace AlphaChiTech.Virtualization
                 DropAllDeltasAndPages();
             }
 
-            RaiseCountChanged(count);
+            RaiseCountChanged(true, count);
         }
 
         /// <summary>
         /// Raises the count changed.
         /// </summary>
         /// <param name="count">The count.</param>
-        protected void RaiseCountChanged(int count)
+        protected void RaiseCountChanged(bool needsReset, int count)
         {
             var evnt = this.CountChanged;
             if (evnt != null)
             {
-                evnt(this);
+                evnt(this, new CountChangedEventArgs() { NeedsReset = needsReset, Count = count });
             }
         }
 
@@ -695,6 +721,9 @@ namespace AlphaChiTech.Virtualization
             {
                 return -1;
             }
+
+            if (!_HasGotCount) EnsureCount();
+            _LocalCount++;
 
         }
 
@@ -738,7 +767,8 @@ namespace AlphaChiTech.Virtualization
                         if (up && voc != null)
                         {
                             // Fill with placeholders
-                            for (int loop = 0; loop < pageSize; loop++)
+                            Debug.WriteLine("Filling with placeholders, pagesize=" + pageSize);
+                            for (int loop = 0; loop <= pageSize; loop++)
                             {
                                 newPage.Append(this.ProviderAsync.GetPlaceHolder(newPage.Page, loop), null, this.ExpiryComparer);
                             }
@@ -762,6 +792,7 @@ namespace AlphaChiTech.Virtualization
 
         private async void DoRealPageGet(Object voc, ISourcePage<T> page, int pageOffset, int index, CancellationTokenSource cts)
         {
+            Debug.WriteLine("DoRealPageGet: pageOffset=" + pageOffset + " index=" + index);
             VirtualizingObservableCollection<T> realVOC = (VirtualizingObservableCollection<T>)voc;
 
             if (realVOC != null)
@@ -770,10 +801,27 @@ namespace AlphaChiTech.Virtualization
 
                 page.WiredDateTime = DateTime.Now; // TODO: Should come from the provider ??
 
+                int i = 0;
                 foreach (var item in data.Items)
                 {
-                    VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, page.GetAt(index), item, index));
-                    index++;
+
+                    if(page.ReplaceNeeded(i))
+                    {
+                        var old = page.GetAt(i);
+                        if (old == null)
+                        {
+
+                        }
+
+                        page.ReplaceAt(i, old, item, null, null);
+                        VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset+i));
+                    }
+                    else
+                    {
+                        page.ReplaceAt(i, default(T), item, null, null);
+                    }
+
+                    i++;
                 }
             }
 
@@ -798,6 +846,8 @@ namespace AlphaChiTech.Virtualization
         {
             int page; int offset;
 
+            if (!_HasGotCount) EnsureCount();
+
             CalculateFromIndex(index, 0, out page, out offset);
 
             if (IsPageWired(page))
@@ -813,12 +863,21 @@ namespace AlphaChiTech.Virtualization
                 edit.OnInsert(index, item, timestamp);
             }
 
+            _LocalCount++;
+
             ClearOptimizations();
+        }
+
+        void EnsureCount()
+        {
+
         }
 
         public void OnRemove(int index, T item, object timestamp)
         {
             int page; int offset;
+
+            if (!_HasGotCount) EnsureCount();
 
             CalculateFromIndex(index, 0, out page, out offset);
 
@@ -834,6 +893,8 @@ namespace AlphaChiTech.Virtualization
             {
                 edit.OnRemove(index, item, timestamp);
             }
+
+            _LocalCount--;
 
             ClearOptimizations();
         }

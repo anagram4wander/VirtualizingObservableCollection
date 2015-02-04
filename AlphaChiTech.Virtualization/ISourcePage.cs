@@ -31,5 +31,6 @@ namespace AlphaChiTech.Virtualization
 
         DateTime WiredDateTime { get; set; }
 
+        bool ReplaceNeeded(int offset);
     }
 }

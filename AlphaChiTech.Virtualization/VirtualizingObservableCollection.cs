@@ -245,19 +245,58 @@ namespace AlphaChiTech.Virtualization
 
         #endregion IList<T> Implementation
 
-
         #region Public Properties
 
         public IItemSourceProviderAsync<T> ProviderAsync
         {
             get { return _ProviderAsync; }
-            set { _ProviderAsync = value; }
+            set
+            {
+                ClearCountChangedHooks();
+                _ProviderAsync = value;
+                if (_ProviderAsync is INotifyCountChanged)
+                {
+                    (_ProviderAsync as INotifyCountChanged).CountChanged += VirtualizingObservableCollection_CountChanged;
+                }
+            }
+        }
+
+        void VirtualizingObservableCollection_CountChanged(object sender, CountChangedEventArgs args)
+        {
+            if (args.NeedsReset)
+            {
+                // Send a reset..
+                RaiseCollectionChangedEvent(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            }
+            OnCountTouched();
         }
 
         public IItemSourceProvider<T> Provider
         {
             get { return _Provider; }
-            set { _Provider = value; }
+            set
+            {
+                ClearCountChangedHooks();
+                _Provider = value;
+
+                if (_Provider is INotifyCountChanged)
+                {
+                    (_Provider as INotifyCountChanged).CountChanged += VirtualizingObservableCollection_CountChanged;
+                }
+            }
+        }
+
+        void ClearCountChangedHooks()
+        {
+            if(_Provider is INotifyCountChanged)
+            {
+                (_Provider as INotifyCountChanged).CountChanged -= VirtualizingObservableCollection_CountChanged;
+            }
+
+            if(_ProviderAsync is INotifyCountChanged)
+            {
+                (_ProviderAsync as INotifyCountChanged).CountChanged -= VirtualizingObservableCollection_CountChanged;
+            }
         }
 
         #endregion Public Properties
@@ -303,8 +342,6 @@ namespace AlphaChiTech.Virtualization
 
         #region Internal implementation
 
-        bool _HasGotCount = false;
-        int _LocalCount = 0;
         protected String _DefaultSelectionContext = new Guid().ToString();
         private IItemSourceProvider<T> _Provider = null;
         private IItemSourceProviderAsync<T> _ProviderAsync = null;
@@ -349,41 +386,8 @@ namespace AlphaChiTech.Virtualization
             }
         }
 
-        private void EnsureCountIsGotNONASync()
-        {
-            if (!_HasGotCount)
-            {
-                if (this.Provider != null)
-                {
-                    ResetCount(this.Provider.Count);
-                }
-                else
-                {
-                    ResetCount(this.ProviderAsync.Count.Result);
-                }
-            }
-        }
-
-        void ResetCount(int count)
-        {
-            if (_Provider != null)
-            {
-                _Provider.OnReset(count);
-            }
-            else
-            {
-                _ProviderAsync.OnReset(count);
-            }
-
-            _HasGotCount = true;
-            _LocalCount = count;
-            OnCountTouched();
-        }
-
         void InternalClear()
         {
-            _HasGotCount = false;
-
             InternalGetCount();
         }
 
@@ -429,27 +433,29 @@ namespace AlphaChiTech.Virtualization
 
             //OnCountTouched();
 
-            InternalInsertAt(InternalGetCount() + 1, newValue, timestamp);
+            int index = InternalGetCount() + 1;
 
-            return _LocalCount;
+            InternalInsertAt(index, newValue, timestamp);
+
+            return index;
         }
 
 
         int InternalGetCount()
         {
-            if (!_HasGotCount)
+            int ret = 0;
+
+            if (this.Provider != null)
             {
-                if (this.Provider != null)
-                {
-                    ResetCount(this.Provider.Count);
-                }
-                else
-                {
-                    ResetCount(this.ProviderAsync.Count.Result);
-                }
+                ret = this.Provider.GetCount(true);
+            }
+            else
+            {
+                ret = this.ProviderAsync.Count.Result;
             }
 
-            return _LocalCount;
+
+            return ret;
         }
 
         void InternalInsertAt(int index, T item, object timestamp = null)
@@ -457,8 +463,6 @@ namespace AlphaChiTech.Virtualization
 
             var edit = GetProviderAsEditable();
             edit.OnInsert(index, item, timestamp);
-
-            _LocalCount++;
 
             NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
             RaiseCollectionChangedEvent(args);
@@ -476,8 +480,6 @@ namespace AlphaChiTech.Virtualization
             }
             else
             {
-                _LocalCount--;
-
                 var edit = GetProviderAsEditable();
                 edit.OnRemove(index, oldValue, timestamp);
 
@@ -500,6 +502,11 @@ namespace AlphaChiTech.Virtualization
             {
                 return this.ProviderAsync.IndexOf(item).Result;
             }
+        }
+
+        void EnsureCountIsGotNONASync()
+        {
+
         }
 
         #endregion Internal implementation

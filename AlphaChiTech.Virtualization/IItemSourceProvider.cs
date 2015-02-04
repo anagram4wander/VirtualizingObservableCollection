@@ -8,7 +8,7 @@ namespace AlphaChiTech.Virtualization
     public interface IItemSourceProvider<T> : IBaseSourceProvider
     {
         T GetAt(int index, object voc, bool usePlaceholder);
-        int Count { get; }
+        int GetCount(bool asyncOK);
 
         int IndexOf(T item);
     }
