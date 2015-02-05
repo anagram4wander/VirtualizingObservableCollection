@@ -144,7 +144,14 @@ namespace AlphaChiTech.Virtualization
             this.MaxDeltas = maxDeltas;
             this.MaxDistance = maxDistance;
 
-            this.Provider = provider;
+            if (provider is IPagedSourceProviderAsync<T>)
+            {
+                this.ProviderAsync = (IPagedSourceProviderAsync<T>)provider;
+            }
+            else
+            {
+                this.Provider = provider;
+            }
 
             if (reclaimer != null)
             {
@@ -160,48 +167,7 @@ namespace AlphaChiTech.Virtualization
             VirtualizationManager.Instance.AddAction(new ReclaimPagesWA(this, sectionContext));
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PaginationManager{T}" /> class.
-        /// </summary>
-        /// <param name="provider">The provider.</param>
-        /// <param name="reclaimer">The reclaimer.</param>
-        /// <param name="expiryComparer">The expiry comparer.</param>
-        /// <param name="pageSize">Size of the page.</param>
-        /// <param name="maxPages">The maximum pages.</param>
-        /// <param name="maxDeltas">The maximum deltas.</param>
-        /// <param name="maxDistance">The maximum distance.</param>
-        /// <param name="sectionContext">The section context.</param>
-        public PaginationManager(
-            IPagedSourceProviderAsync<T> provider,
-            IPageReclaimer<T> reclaimer = null,
-            IPageExpiryComparer expiryComparer = null,
-            int pageSize = 100,
-            int maxPages = 100,
-            int maxDeltas = -1,
-            int maxDistance = -1,
-            string sectionContext = ""
-            )
-        {
-            this.PageSize = pageSize;
-            this.MaxPages = maxPages;
-            this.MaxDeltas = maxDeltas;
-            this.MaxDistance = maxDistance;
 
-            this.ProviderAsync = provider;
-
-            if (reclaimer != null)
-            {
-                _Reclaimer = reclaimer;
-            }
-            else
-            {
-                _Reclaimer = new PageReclaimOnTouched<T>();
-            }
-
-            this.ExpiryComparer = expiryComparer;
-
-            VirtualizationManager.Instance.AddAction(new ReclaimPagesWA(this, sectionContext));
-        }
 
         /// <summary>
         /// Adds the or update adjustment.
@@ -293,7 +259,7 @@ namespace AlphaChiTech.Virtualization
         /// <param name="inneroffset">The inneroffset.</param>
         protected void CalculateFromIndex(int index, int indexAdjustment, out int page, out int inneroffset, int adjustmentsAppliedToPages = -1)
         {
-            if (adjustmentsAppliedToPages == -1)
+            if (adjustmentsAppliedToPages == -1 && !IsAsync)
             {
                 // See if we can use some optimization.. aka its the same index as last time..
                 if (_LastIndex != -1 && index == _LastIndex)
@@ -346,12 +312,6 @@ namespace AlphaChiTech.Virtualization
             // First work out the base page from the index and the offset inside that page
             int basepage = page = index / this.PageSize;
             inneroffset = (index + indexAdjustment) - (page * this.PageSize);
-            if (adjustmentsAppliedToPages == -1)
-            {
-                _LastIndex = index;
-            }
-            _LastPage = basepage;
-            _LastOffset = inneroffset;
 
             // We only need to do the rest if there have been modifications to the page sizes on pages (deltas)
             if (_Deltas.Count > 0)
@@ -401,15 +361,16 @@ namespace AlphaChiTech.Virtualization
                         }
                         else
                         {
+                            var delta = _Deltas[basepage];
                             // It is expanded, see if the expanded page contains this offset
-                            if (inneroffset < (this.PageSize - adjustment))
+                            if (inneroffset < (this.PageSize + delta.Delta))
                             {
                                 // Its just fine
                             }
                             else
                             {
                                 // No it does not include this offset, so recurse in using the adjusted index
-                                CalculateFromIndex(index - adjustment, 0, out page, out inneroffset, basepage);
+                                CalculateFromIndex(index + delta.Delta, 0, out page, out inneroffset, basepage);
                             }
                         }
                     }
@@ -428,6 +389,14 @@ namespace AlphaChiTech.Virtualization
                         }
                     }
                 }
+            }
+
+            if (adjustmentsAppliedToPages == -1)
+            {
+                _LastIndex = index;
+
+                _LastPage = basepage;
+                _LastOffset = inneroffset;
             }
 
         }
@@ -546,6 +515,8 @@ namespace AlphaChiTech.Virtualization
             {
 
             }
+
+            Debug.WriteLine("Get at index:" + index + "returned:" + ret.ToString() + " page=" + page + " offset=" + offset);
             return ret;
         }
 
@@ -574,7 +545,7 @@ namespace AlphaChiTech.Virtualization
         /// <param name="pageOffset">The page offset.</param>
         void FillPageFromAsyncProvider(ISourcePage<T> newPage, int pageOffset)
         {
-            var data = this.ProviderAsync.GetItemsAt(pageOffset, newPage.ItemsPerPage, false).Result;
+            var data = this.ProviderAsync.GetItemsAt(pageOffset, newPage.ItemsPerPage, false);
             newPage.WiredDateTime = data.LoadedAt;
             foreach (var o in data.Items)
             {
@@ -597,15 +568,15 @@ namespace AlphaChiTech.Virtualization
 
                 if (!_HasGotCount)
                 {
-                    if (this.Provider != null)
+                    if (!IsAsync)
                     {
                         ret = this.Provider.Count;
                     }
-                    else if (this.ProviderAsync != null)
+                    else
                     {
                         if (!asyncOK)
                         {
-                            ret = this.ProviderAsync.GetCount().Result;
+                            ret = this.ProviderAsync.Count;
                         }
                         else
                         {
@@ -624,7 +595,7 @@ namespace AlphaChiTech.Virtualization
 
         private async void GetCountAsync()
         {
-            int ret = await this.ProviderAsync.GetCount();
+            int ret = await this.ProviderAsync.GetCountAsync();
             _HasGotCount = true;
             _LocalCount = ret;
 
@@ -652,13 +623,13 @@ namespace AlphaChiTech.Virtualization
                 }
             }
 
-            if (this.Provider != null)
+            if (!IsAsync)
             {
                 return this.Provider.IndexOf(item);
             }
             else
             {
-                return this.ProviderAsync.IndexOf(item).Result;
+                return this.ProviderAsync.IndexOf(item);
             }
         }
 
@@ -670,7 +641,7 @@ namespace AlphaChiTech.Virtualization
         {
             ClearOptimizations();
 
-            if (this.Provider != null)
+            if (!IsAsync)
             {
                 this.Provider.OnReset(count);
             }
@@ -748,7 +719,7 @@ namespace AlphaChiTech.Virtualization
                     var newPage = this._Reclaimer.MakePage(page, pageSize);
                     _Pages.Add(page, newPage);
 
-                    if (this.Provider != null)
+                    if (!IsAsync)
                     {
                         FillPage(newPage, pageOffset);
 
@@ -756,13 +727,7 @@ namespace AlphaChiTech.Virtualization
                     }
                     else
                     {
-                        bool up = allowPlaceholders;
-
-                        if (up)
-                        {
-                            object o = this.ProviderAsync.GetPlaceHolder(newPage.Page, 0);
-                            if (o == null) up = false;
-                        }
+                        bool up = allowPlaceholders;                        
 
                         if (up && voc != null)
                         {
@@ -794,17 +759,18 @@ namespace AlphaChiTech.Virtualization
         {
             Debug.WriteLine("DoRealPageGet: pageOffset=" + pageOffset + " index=" + index);
             VirtualizingObservableCollection<T> realVOC = (VirtualizingObservableCollection<T>)voc;
+            List<PlaceholderReplaceWA<T>> listOfReplaces = new List<PlaceholderReplaceWA<T>>();
 
             if (realVOC != null)
             {
-                var data = await ProviderAsync.GetItemsAt(pageOffset, page.ItemsPerPage, false);
+                var data = await ProviderAsync.GetItemsAtAsync(pageOffset, page.ItemsPerPage, false);
 
-                page.WiredDateTime = DateTime.Now; // TODO: Should come from the provider ??
+                page.WiredDateTime = data.LoadedAt;
 
                 int i = 0;
                 foreach (var item in data.Items)
                 {
-
+                    ClearOptimizations();
                     if(page.ReplaceNeeded(i))
                     {
                         var old = page.GetAt(i);
@@ -813,8 +779,12 @@ namespace AlphaChiTech.Virtualization
 
                         }
 
+                        ClearOptimizations();
+                        Debug.WriteLine("Replacing:" + old.ToString() + " with " + item.ToString());
+
                         page.ReplaceAt(i, old, item, null, null);
-                        VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset+i));
+                        //VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset+i));
+                        listOfReplaces.Add(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset + i));
                     }
                     else
                     {
@@ -823,11 +793,18 @@ namespace AlphaChiTech.Virtualization
 
                     i++;
                 }
+
             }
 
             page.PageFetchState = PageFetchStateEnum.Fetched;
 
             RemovePageRequest(page.Page);
+
+            ClearOptimizations();
+            foreach (var replace in listOfReplaces)
+            {
+                VirtualizationManager.Instance.RunOnUI(replace);
+            }
         }
 
         protected bool IsPageWired(int page)
@@ -857,6 +834,11 @@ namespace AlphaChiTech.Virtualization
             }
             AddOrUpdateAdjustment(page, 1);
 
+            if (this.IsAsync)
+            {
+                var test = this.GetAt(index, this, false);
+            }
+
             var edit = GetProviderAsEditable();
             if (edit != null)
             {
@@ -873,6 +855,14 @@ namespace AlphaChiTech.Virtualization
 
         }
 
+        protected bool IsAsync
+        {
+            get
+            {
+                return _ProviderAsync != null ? true : false;
+            }
+        }
+
         public void OnRemove(int index, T item, object timestamp)
         {
             int page; int offset;
@@ -887,6 +877,11 @@ namespace AlphaChiTech.Virtualization
                 dataPage.RemoveAt(offset, timestamp, this.ExpiryComparer);
             }
             AddOrUpdateAdjustment(page, -1);
+
+            if (this.IsAsync)
+            {
+                var test = this.GetAt(index, this, false);
+            }
 
             var edit = GetProviderAsEditable();
             if (edit != null)

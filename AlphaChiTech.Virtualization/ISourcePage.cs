@@ -1,10 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 
 namespace AlphaChiTech.Virtualization
 {
+    public class SourcePagePendingUpdates
+    {
+        public INotifyCollectionChanged Args { get; set; }
+        public Object UpdatedAt { get; set; }
+    }
+
     public interface ISourcePage<T>
     {
         int Page { get; set; }
@@ -32,5 +39,7 @@ namespace AlphaChiTech.Virtualization
         DateTime WiredDateTime { get; set; }
 
         bool ReplaceNeeded(int offset);
+
+        List<SourcePagePendingUpdates> PendingUpdates { get; }
     }
 }

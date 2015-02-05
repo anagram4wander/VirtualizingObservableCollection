@@ -18,6 +18,12 @@ namespace AlphaChiTech.Virtualization
         /// </value>
         public int Page { get; set; }
 
+        private List<SourcePagePendingUpdates> _PendingUpdates = new List<SourcePagePendingUpdates>();
+
+        public List<SourcePagePendingUpdates> PendingUpdates
+        {
+            get { return _PendingUpdates; }
+        }
 
         /// <summary>
         /// Gets or sets the items per page.

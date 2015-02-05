@@ -379,7 +379,7 @@ namespace AlphaChiTech.Virtualization
 
             if (edit != null)
             {
-                edit.OnReplace(index, oldValue, newValue, timestamp);
+                edit.OnReplace(index, oldValue, newValue, timestamp); // TODO: Only raise if its in scope..
 
                 NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newValue, oldValue, index);
                 RaiseCollectionChangedEvent(args);

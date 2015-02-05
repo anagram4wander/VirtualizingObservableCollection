@@ -6,15 +6,13 @@ using System.Threading.Tasks;
 
 namespace AlphaChiTech.Virtualization
 {
-    public interface IPagedSourceProviderAsync<T> : IBaseSourceProvider
+    public interface IPagedSourceProviderAsync<T> : IPagedSourceProvider<T>
     {
-         Task<PagedSourceItemsPacket<T>> GetItemsAt(int pageoffset, int count, bool usePlaceholder);
+         Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder);
 
         T GetPlaceHolder(int page, int offset);
 
-        Task<int> GetCount();
-
-        Task<int> IndexOf(T item);
+        Task<int> GetCountAsync();
 
     }
 }
