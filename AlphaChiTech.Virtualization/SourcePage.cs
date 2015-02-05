@@ -82,7 +82,7 @@ namespace AlphaChiTech.Virtualization
         /// <value>
         /// The last touch.
         /// </value>
-        public DateTime LastTouch { get; set; }
+        public Object LastTouch { get; set; }
 
         /// <summary>
         /// Gets at.
@@ -205,7 +205,7 @@ namespace AlphaChiTech.Virtualization
             set { _PageFetchState = value; }
         }
 
-        private DateTime _WiredDateTime = DateTime.MinValue;
+        private Object _WiredDateTime = DateTime.MinValue;
 
         /// <summary>
         /// Gets or sets the wired date time.
@@ -213,7 +213,7 @@ namespace AlphaChiTech.Virtualization
         /// <value>
         /// The wired date time.
         /// </value>
-        public DateTime WiredDateTime
+        public object WiredDateTime
         {
             get { return _WiredDateTime; }
             set { _WiredDateTime = value; }

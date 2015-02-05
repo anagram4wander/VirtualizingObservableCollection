@@ -373,13 +373,13 @@ namespace AlphaChiTech.Virtualization
             return ret;
         }
 
-        internal void ReplaceAt(int index, T oldValue, T newValue, DateTime? timestamp)
+        internal void ReplaceAt(int index, T oldValue, T newValue, object timestamp)
         {
             var edit = this.GetProviderAsEditable();
 
             if (edit != null)
             {
-                edit.OnReplace(index, oldValue, newValue, timestamp); // TODO: Only raise if its in scope..
+                edit.OnReplace(index, oldValue, newValue, timestamp);
 
                 NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newValue, oldValue, index);
                 RaiseCollectionChangedEvent(args);

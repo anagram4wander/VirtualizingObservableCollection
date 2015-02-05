@@ -516,7 +516,7 @@ namespace AlphaChiTech.Virtualization
 
             }
 
-            Debug.WriteLine("Get at index:" + index + "returned:" + ret.ToString() + " page=" + page + " offset=" + offset);
+            //Debug.WriteLine("Get at index:" + index + "returned:" + ret.ToString() + " page=" + page + " offset=" + offset);
             return ret;
         }
 
@@ -732,7 +732,7 @@ namespace AlphaChiTech.Virtualization
                         if (up && voc != null)
                         {
                             // Fill with placeholders
-                            Debug.WriteLine("Filling with placeholders, pagesize=" + pageSize);
+                            //Debug.WriteLine("Filling with placeholders, pagesize=" + pageSize);
                             for (int loop = 0; loop <= pageSize; loop++)
                             {
                                 newPage.Append(this.ProviderAsync.GetPlaceHolder(newPage.Page, loop), null, this.ExpiryComparer);
@@ -757,7 +757,7 @@ namespace AlphaChiTech.Virtualization
 
         private async void DoRealPageGet(Object voc, ISourcePage<T> page, int pageOffset, int index, CancellationTokenSource cts)
         {
-            Debug.WriteLine("DoRealPageGet: pageOffset=" + pageOffset + " index=" + index);
+            //Debug.WriteLine("DoRealPageGet: pageOffset=" + pageOffset + " index=" + index);
             VirtualizingObservableCollection<T> realVOC = (VirtualizingObservableCollection<T>)voc;
             List<PlaceholderReplaceWA<T>> listOfReplaces = new List<PlaceholderReplaceWA<T>>();
 
@@ -780,7 +780,7 @@ namespace AlphaChiTech.Virtualization
                         }
 
                         ClearOptimizations();
-                        Debug.WriteLine("Replacing:" + old.ToString() + " with " + item.ToString());
+                        //Debug.WriteLine("Replacing:" + old.ToString() + " with " + item.ToString());
 
                         page.ReplaceAt(i, old, item, null, null);
                         //VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset+i));

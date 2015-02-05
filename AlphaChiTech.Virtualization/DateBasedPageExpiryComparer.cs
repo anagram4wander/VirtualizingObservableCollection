@@ -22,7 +22,7 @@ namespace AlphaChiTech.Virtualization
         {
             bool isStillValid = true;
 
-            if (pageUpdateAt is DateTime && updateAt is DateTime)
+            if (pageUpdateAt != null && updateAt != null && pageUpdateAt is DateTime && updateAt is DateTime)
             {
                 if (((DateTime)pageUpdateAt) >= ((DateTime)updateAt))
                 {

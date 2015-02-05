@@ -20,7 +20,7 @@ namespace AlphaChiTech.Virtualization
 
         bool CanReclaimPage { get; }
 
-        DateTime LastTouch { get; set; }
+        Object LastTouch { get; set; }
 
         T GetAt(int offset);
 
@@ -36,7 +36,7 @@ namespace AlphaChiTech.Virtualization
 
         PageFetchStateEnum PageFetchState { get; set; }
 
-        DateTime WiredDateTime { get; set; }
+        Object WiredDateTime { get; set; }
 
         bool ReplaceNeeded(int offset);
 
