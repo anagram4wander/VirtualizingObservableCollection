@@ -423,19 +423,18 @@ namespace AlphaChiTech.Virtualization
 
         int InternalAdd(T newValue, object timestamp)
         {
-            //var edit = GetProviderAsEditable();
-            //var index = edit.OnAppend(newValue, timestamp);
+            var edit = GetProviderAsEditable();
+            var index = edit.OnAppend(newValue, timestamp);
 
-            //_LocalCount = InternalGetCount() + 1;
+            NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, index);
+            RaiseCollectionChangedEvent(args);
 
-            //NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, _LocalCount);
-            //RaiseCollectionChangedEvent(args);
+            OnCountTouched();
 
-            //OnCountTouched();
 
-            int index = InternalGetCount();
+            //int index = InternalGetCount();
 
-            InternalInsertAt(index, newValue, timestamp);
+            //InternalInsertAt(index, newValue, timestamp);
 
             return index;
         }

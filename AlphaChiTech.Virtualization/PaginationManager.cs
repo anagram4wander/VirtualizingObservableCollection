@@ -682,20 +682,52 @@ namespace AlphaChiTech.Virtualization
         {
             ClearOptimizations();
 
-            var edit = GetProviderAsEditable();
+            int index = _LocalCount;
 
-            if (edit != null)
-            {
-                return edit.OnAppend(item, timestamp);
-            }
-            else
-            {
-                return -1;
-            }
+            int page; int offset;
 
             if (!_HasGotCount) EnsureCount();
+
+            CalculateFromIndex(index, 0, out page, out offset);
+
+            if (IsPageWired(page))
+            {
+                bool shortpage = false;
+                var dataPage = SafeGetPage(page, false, null, index);
+                if (dataPage.ItemsPerPage < this.PageSize) shortpage = true;
+
+                dataPage.Append(item, timestamp, this.ExpiryComparer);
+
+                if(shortpage)
+                {
+                    dataPage.ItemsPerPage++;
+                }
+                else
+                {
+                    AddOrUpdateAdjustment(page, 1);
+                }
+
+            }
+
             _LocalCount++;
 
+            ClearOptimizations();
+
+            if (this.IsAsync)
+            {
+                var test = this.GetAt(index, this, false);
+            }
+
+
+            var edit = GetProviderAsEditable();
+            if (edit != null)
+            {
+                edit.OnInsert(index, item, timestamp);
+            }
+
+            ClearOptimizations();
+
+            return index;
         }
 
         protected ISourcePage<T> SafeGetPage(int page, bool allowPlaceholders, object voc, int index)
