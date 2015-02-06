@@ -10,7 +10,7 @@ namespace AlphaChiTech.Virtualization
     {
          Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder);
 
-        T GetPlaceHolder(int page, int offset);
+        T GetPlaceHolder(int index, int page, int offset);
 
         Task<int> GetCountAsync();
 

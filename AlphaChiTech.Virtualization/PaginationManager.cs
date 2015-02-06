@@ -767,7 +767,7 @@ namespace AlphaChiTech.Virtualization
                             //Debug.WriteLine("Filling with placeholders, pagesize=" + pageSize);
                             for (int loop = 0; loop < pageSize; loop++)
                             {
-                                newPage.Append(this.ProviderAsync.GetPlaceHolder(newPage.Page, loop), null, this.ExpiryComparer);
+                                newPage.Append(this.ProviderAsync.GetPlaceHolder(index+loop, newPage.Page, loop), null, this.ExpiryComparer);
                             }
 
                             ret = newPage;
@@ -884,7 +884,7 @@ namespace AlphaChiTech.Virtualization
 
         void EnsureCount()
         {
-
+            GetCount(false);
         }
 
         protected bool IsAsync
