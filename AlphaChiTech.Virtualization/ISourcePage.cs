@@ -41,5 +41,7 @@ namespace AlphaChiTech.Virtualization
         bool ReplaceNeeded(int offset);
 
         List<SourcePagePendingUpdates> PendingUpdates { get; }
+
+        int ItemsCount { get; }
     }
 }

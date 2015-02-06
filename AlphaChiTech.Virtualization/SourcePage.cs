@@ -33,6 +33,14 @@ namespace AlphaChiTech.Virtualization
         /// </value>
         public int ItemsPerPage { get; set; }
 
+        public int ItemsCount
+        {
+            get
+            {
+                return _Items.Count;
+            }
+        }
+
         private List<int> _ReplaceNeededList = new List<int>();
 
         /// <summary>
@@ -143,6 +151,7 @@ namespace AlphaChiTech.Virtualization
                 {
                     _Items.Add(item);
                 }
+
             }
         }
 

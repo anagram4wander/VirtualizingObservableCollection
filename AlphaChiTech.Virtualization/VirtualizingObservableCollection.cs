@@ -433,7 +433,7 @@ namespace AlphaChiTech.Virtualization
 
             //OnCountTouched();
 
-            int index = InternalGetCount() + 1;
+            int index = InternalGetCount();
 
             InternalInsertAt(index, newValue, timestamp);
 

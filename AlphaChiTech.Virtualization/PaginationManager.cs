@@ -713,8 +713,8 @@ namespace AlphaChiTech.Virtualization
                 {
                     PageDelta delta = null;
                     if (_Deltas.ContainsKey(page)) delta = _Deltas[page];
-                    int pageSize = this.PageSize;
                     int pageOffset = page * this.PageSize + (from d in _Deltas.Values where d.Page < page select d.Delta).Sum();
+                    int pageSize = Math.Min(this.PageSize, this.GetCount(false)-pageOffset);
                     if (delta != null) pageSize += delta.Delta;
                     var newPage = this._Reclaimer.MakePage(page, pageSize);
                     _Pages.Add(page, newPage);
@@ -733,7 +733,7 @@ namespace AlphaChiTech.Virtualization
                         {
                             // Fill with placeholders
                             //Debug.WriteLine("Filling with placeholders, pagesize=" + pageSize);
-                            for (int loop = 0; loop <= pageSize; loop++)
+                            for (int loop = 0; loop < pageSize; loop++)
                             {
                                 newPage.Append(this.ProviderAsync.GetPlaceHolder(newPage.Page, loop), null, this.ExpiryComparer);
                             }
