@@ -21,15 +21,15 @@
       </Path>
     </AssociationLine>
     <TypeIdentifier>
-      <HashCode>AGUEAICAAAZEQCBAIAkEJACYIoIwAIBgAUJIMIGkAQU=</HashCode>
+      <HashCode>AGUEAIKAAA5EQCBAIAkEJACYIoIwAIBgAUJIMIGkAQU=</HashCode>
       <FileName>PaginationManager.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
       <Field Name="_Reclaimer" />
       <Field Name="_Provider" />
-      <Property Name="ProviderAsync" />
-      <Property Name="Provider" />
       <Property Name="ExpiryComparer" />
+      <Property Name="Provider" />
+      <Property Name="ProviderAsync" />
     </ShowAsAssociation>
     <ShowAsCollectionAssociation>
       <Field Name="_Pages" />
@@ -48,7 +48,7 @@
   <Class Name="AlphaChiTech.Virtualization.SourcePage&lt;T&gt;">
     <Position X="13.5" Y="6.5" Width="2.25" />
     <TypeIdentifier>
-      <HashCode>BUAAAAAAABAQIAAAAACAAIABAAIIAQEIiIQIAAAAAAA=</HashCode>
+      <HashCode>BUAAAAAAABAQIAgAAACAAIABAAIIAQEIiIQIAAAAAAA=</HashCode>
       <FileName>SourcePage.cs</FileName>
     </TypeIdentifier>
     <ShowAsAssociation>
@@ -96,7 +96,7 @@
   <Interface Name="AlphaChiTech.Virtualization.ISourcePage&lt;T&gt;" Collapsed="true">
     <Position X="13.5" Y="5.5" Width="2.25" />
     <TypeIdentifier>
-      <HashCode>BEAAAAAAAAAQIAAAAACAAAABAAIIAQEIiAQAAAAAAAA=</HashCode>
+      <HashCode>BEAAAAAAAAAQIAgAAACAAAABAAIIAQEIiAQAAAAAAAA=</HashCode>
       <FileName>ISourcePage.cs</FileName>
     </TypeIdentifier>
   </Interface>

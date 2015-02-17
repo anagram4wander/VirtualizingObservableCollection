@@ -250,6 +250,8 @@ namespace AlphaChiTech.Virtualization
             _LastIndex = -1;
         }
 
+        /* Old implementation
+
         /// <summary>
         /// Calculates the page and the offset from the index.
         /// </summary>
@@ -259,7 +261,7 @@ namespace AlphaChiTech.Virtualization
         /// <param name="inneroffset">The inneroffset.</param>
         protected void CalculateFromIndex(int index, int indexAdjustment, out int page, out int inneroffset, int adjustmentsAppliedToPages = -1)
         {
-            if (adjustmentsAppliedToPages == -1 && !IsAsync)
+            if (adjustmentsAppliedToPages == -1 && 1==0)
             {
                 // See if we can use some optimization.. aka its the same index as last time..
                 if (_LastIndex != -1 && index == _LastIndex)
@@ -385,7 +387,24 @@ namespace AlphaChiTech.Virtualization
                         if (inneroffset >= this.PageSize + adjustmentForCurrentPage.Delta)
                         {
                             // Recurse in using the adjustment for the current page to deal with the offset..
-                            CalculateFromIndex(index - adjustmentForCurrentPage.Delta, adjustmentForCurrentPage.Delta, out page, out inneroffset);
+                            //CalculateFromIndex(index - adjustmentForCurrentPage.Delta, 0, out page, out inneroffset);
+
+                            inneroffset += adjustmentForCurrentPage.Delta;
+
+                            while(inneroffset<0)
+                            {
+                                page = ++basepage;
+
+                                var items = this.PageSize;
+
+                                if (_Deltas.ContainsKey(basepage))
+                                {
+
+                                    items += _Deltas[basepage].Delta;
+                                }
+
+                                inneroffset += items;
+                            }      
                         }
                     }
                 }
@@ -400,7 +419,109 @@ namespace AlphaChiTech.Virtualization
             }
 
         }
+        */
 
+        int _BasePage = 0;
+
+        protected void CalculateFromIndex(int index, out int page, out int inneroffset)
+        {
+            // First work out the base page from the index and the offset inside that page
+            int basepage = page = (index / this.PageSize) + _BasePage;
+            inneroffset = (index+(_BasePage*this.PageSize)) - (page * this.PageSize);
+
+            // We only need to do the rest if there have been modifications to the page sizes on pages (deltas)
+            if (_Deltas.Count > 0)
+            {
+                // Get the adjustment BEFORE checking for a short page, because we are going to adjust for that first..
+                int adjustment = 0;
+
+                lock (_PageLock)
+                {
+                    // First, get the total adjustments for any pages BEFORE the current page..
+                    adjustment = (from d in _Deltas.Values where d.Page < basepage select d.Delta).Sum();
+                }
+
+                // Now check to see if we are currently in a short page - in which case we need to adjust for that
+                if (_Deltas.ContainsKey(page))
+                {
+                    int delta = _Deltas[page].Delta;
+        
+                    if(delta<0)
+                    {
+                        // In a short page, are we over the edge ?
+                        if(inneroffset >= this.PageSize+delta)
+                        {
+                            int step = inneroffset-(this.PageSize+delta-1);
+                            inneroffset -= step;
+                            DoStepForward(ref page, ref inneroffset, step);
+                        }
+                    }
+                }
+
+                // If we do have adjustments...
+                if (adjustment != 0)
+                {
+                    if(adjustment>0)
+                    {
+                        // items have been added to earlier pages, so we need to step back
+                        DoStepBackwards(ref page, ref inneroffset, adjustment);
+                    }
+                    else
+                    {
+                        // items have been removed from earlier pages, so we need to step forward
+                        DoStepForward(ref page, ref inneroffset, Math.Abs(adjustment));
+                    }
+                }
+
+            }
+
+        }
+
+        private void DoStepBackwards(ref int page, ref int offset, int stepAmount)
+        {
+            bool done = false;
+
+            while(!done)
+            {
+                int items = this.PageSize;
+                if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
+                if(offset - stepAmount < 0)
+                {
+                    stepAmount -= (offset+1);
+                    page--;
+                    items = this.PageSize;
+                    if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
+                    offset = items-1;
+                } 
+                else
+                {
+                    offset -= stepAmount;
+                    done = true;
+                }
+            }
+        }
+
+        private void DoStepForward(ref int page, ref int offset, int stepAmount)
+        {
+            bool done = false;
+
+            while(!done)
+            {
+                int items = this.PageSize;
+                if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
+                if(items<=offset+stepAmount)
+                {
+                    stepAmount -= (items)-offset;
+                    offset = 0;
+                    page++;
+                }
+                else
+                {
+                    offset += stepAmount;
+                    done = true;
+                }
+            }
+        }
         IPagedSourceProvider<T> _Provider = null;
 
         /// <summary>
@@ -505,7 +626,7 @@ namespace AlphaChiTech.Virtualization
             int page;
             int offset;
 
-            CalculateFromIndex(index, 0, out page, out offset);
+            CalculateFromIndex(index, out page, out offset);
 
             var datapage = SafeGetPage(page, usePlaceholder, voc, index);
 
@@ -581,7 +702,8 @@ namespace AlphaChiTech.Virtualization
                         else
                         {
                             ret = 0;
-                            GetCountAsync();
+                            var cts = StartPageRequest(Int32.MinValue);
+                            GetCountAsync(cts);
                         }
                     }
 
@@ -593,13 +715,23 @@ namespace AlphaChiTech.Virtualization
             
         }
 
-        private async void GetCountAsync()
+        private async void GetCountAsync(CancellationTokenSource cts)
         {
-            int ret = await this.ProviderAsync.GetCountAsync();
-            _HasGotCount = true;
-            _LocalCount = ret;
+            if (!cts.IsCancellationRequested)
+            {
+                int ret = await this.ProviderAsync.GetCountAsync();
 
-            this.RaiseCountChanged(true, _LocalCount);
+                if (!cts.IsCancellationRequested)
+                {
+                    _HasGotCount = true;
+                    _LocalCount = ret;
+                }
+
+                if (!cts.IsCancellationRequested) 
+                    this.RaiseCountChanged(true, _LocalCount);
+            }
+
+            RemovePageRequest(Int32.MinValue);
         }
 
         /// <summary>
@@ -618,7 +750,7 @@ namespace AlphaChiTech.Virtualization
                     int o = p.Value.IndexOf(item);
                     if (o >= 0)
                     {
-                        return o + (p.Key * this.PageSize) + (from d in _Deltas.Values where d.Page < p.Key select d.Delta).Sum();
+                        return o + ((p.Key - _BasePage) * this.PageSize) + (from d in _Deltas.Values where d.Page < p.Key select d.Delta).Sum();
                     }
                 }
             }
@@ -639,7 +771,10 @@ namespace AlphaChiTech.Virtualization
         /// <param name="count">The count.</param>
         public void OnReset(int count)
         {
+            CancelAllRequests();
+
             ClearOptimizations();
+            _HasGotCount = false;
 
             if (!IsAsync)
             {
@@ -656,6 +791,8 @@ namespace AlphaChiTech.Virtualization
             }
 
             RaiseCountChanged(true, count);
+
+            GetCount(true);
         }
 
         /// <summary>
@@ -688,7 +825,7 @@ namespace AlphaChiTech.Virtualization
 
             if (!_HasGotCount) EnsureCount();
 
-            CalculateFromIndex(index, 0, out page, out offset);
+            CalculateFromIndex(index, out page, out offset);
 
             if (IsPageWired(page))
             {
@@ -745,7 +882,7 @@ namespace AlphaChiTech.Virtualization
                 {
                     PageDelta delta = null;
                     if (_Deltas.ContainsKey(page)) delta = _Deltas[page];
-                    int pageOffset = page * this.PageSize + (from d in _Deltas.Values where d.Page < page select d.Delta).Sum();
+                    int pageOffset = (page - _BasePage) * this.PageSize + (from d in _Deltas.Values where d.Page < page select d.Delta).Sum();
                     int pageSize = Math.Min(this.PageSize, this.GetCount(false)-pageOffset);
                     if (delta != null) pageSize += delta.Delta;
                     var newPage = this._Reclaimer.MakePage(page, pageSize);
@@ -795,13 +932,23 @@ namespace AlphaChiTech.Virtualization
 
             if (realVOC != null)
             {
+                if (cts.IsCancellationRequested) return;
+
                 var data = await ProviderAsync.GetItemsAtAsync(pageOffset, page.ItemsPerPage, false);
+
+                if (cts.IsCancellationRequested) return;
 
                 page.WiredDateTime = data.LoadedAt;
 
                 int i = 0;
                 foreach (var item in data.Items)
                 {
+                    if (cts.IsCancellationRequested)
+                    {
+                        RemovePageRequest(page.Page);
+                        return;
+                    }
+
                     ClearOptimizations();
                     if(page.ReplaceNeeded(i))
                     {
@@ -830,13 +977,18 @@ namespace AlphaChiTech.Virtualization
 
             page.PageFetchState = PageFetchStateEnum.Fetched;
 
-            RemovePageRequest(page.Page);
-
             ClearOptimizations();
             foreach (var replace in listOfReplaces)
             {
+                if (cts.IsCancellationRequested)
+                {
+                    RemovePageRequest(page.Page);
+                    return;
+                }
                 VirtualizationManager.Instance.RunOnUI(replace);
             }
+
+            RemovePageRequest(page.Page);
         }
 
         protected bool IsPageWired(int page)
@@ -857,7 +1009,7 @@ namespace AlphaChiTech.Virtualization
 
             if (!_HasGotCount) EnsureCount();
 
-            CalculateFromIndex(index, 0, out page, out offset);
+            CalculateFromIndex(index, out page, out offset);
 
             if (IsPageWired(page))
             {
@@ -901,7 +1053,7 @@ namespace AlphaChiTech.Virtualization
 
             if (!_HasGotCount) EnsureCount();
 
-            CalculateFromIndex(index, 0, out page, out offset);
+            CalculateFromIndex(index, out page, out offset);
 
             if (IsPageWired(page))
             {
@@ -909,6 +1061,17 @@ namespace AlphaChiTech.Virtualization
                 dataPage.RemoveAt(offset, timestamp, this.ExpiryComparer);
             }
             AddOrUpdateAdjustment(page, -1);
+
+            if (page == _BasePage)
+            {
+                int items = this.PageSize;
+                if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
+                if (items == 0)
+                {
+                    _Deltas.Remove(page);
+                    _BasePage++;
+                }
+            }
 
             if (this.IsAsync)
             {
@@ -930,7 +1093,7 @@ namespace AlphaChiTech.Virtualization
         {
             int page; int offset;
 
-            CalculateFromIndex(index, 0, out page, out offset);
+            CalculateFromIndex(index, out page, out offset);
 
             if (IsPageWired(page))
             {

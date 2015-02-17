@@ -388,7 +388,13 @@ namespace AlphaChiTech.Virtualization
 
         void InternalClear()
         {
-            InternalGetCount();
+            if(this.Provider != null)
+            {
+                this.Provider.OnReset(0);
+            } else
+            {
+                this.ProviderAsync.OnReset(0);
+            }
         }
 
         T InternalGetValue(int index, string selectionContext)
@@ -431,13 +437,62 @@ namespace AlphaChiTech.Virtualization
 
             OnCountTouched();
 
+            return index;
+        }
 
-            //int index = InternalGetCount();
 
-            //InternalInsertAt(index, newValue, timestamp);
+        public int AddRange(IEnumerable<T> newValues, object timestamp = null)
+        {
+            var edit = GetProviderAsEditable();
+
+            int index = -1;
+            List<T> items = new List<T>();
+
+            foreach(var item in newValues)
+            {
+                items.Add(item);
+                index = edit.OnAppend(item, timestamp);
+
+                NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
+                RaiseCollectionChangedEvent(args);
+            }
+
+
+            OnCountTouched();
+
 
             return index;
         }
+
+        //public bool RemoveAtRange(int index, int count, object timestamp = null)
+        //{
+        //    bool removedall = true;
+        //    for(int loop = index; loop < index + count; loop++)
+        //    {
+        //        T oldValue = InternalGetValue(loop, _DefaultSelectionContext);
+
+        //        if (oldValue == null)
+        //        {
+        //            removedall = false;
+        //        }
+        //        else
+        //        {
+        //            var edit = GetProviderAsEditable();
+        //            edit.OnRemove(index, oldValue, timestamp);
+
+        //            NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
+        //            RaiseCollectionChangedEvent(args);
+
+
+                 
+        //        }
+
+        //    }
+
+        //    OnCountTouched();
+
+        //    return removedall;
+        //}
 
 
         int InternalGetCount()
@@ -505,7 +560,14 @@ namespace AlphaChiTech.Virtualization
 
         void EnsureCountIsGotNONASync()
         {
-
+            if(this.Provider != null)
+            {
+                this.Provider.GetCount(false);
+            }
+            else
+            {
+                
+            }
         }
 
         #endregion Internal implementation
