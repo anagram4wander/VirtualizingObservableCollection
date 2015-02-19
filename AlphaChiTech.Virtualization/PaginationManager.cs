@@ -174,14 +174,17 @@ namespace AlphaChiTech.Virtualization
         /// </summary>
         /// <param name="page">The page.</param>
         /// <param name="offsetChange">The offset change.</param>
-        public void AddOrUpdateAdjustment(int page, int offsetChange)
+        public int AddOrUpdateAdjustment(int page, int offsetChange)
         {
+            int ret = 0;
+
             lock (_PageLock)
             {
                 if (!_Deltas.ContainsKey(page))
                 {
                     if (this.MaxDeltas == -1 || _Deltas.Count < this.MaxDeltas)
                     {
+                        ret = offsetChange;
                         _Deltas.Add(page, new PageDelta() { Page = page, Delta = offsetChange });
                     }
                     else
@@ -198,8 +201,12 @@ namespace AlphaChiTech.Virtualization
                     {
                         _Deltas.Remove(page);
                     }
+
+                    ret = adjustment.Delta;
                 }
             }
+
+            return ret;
         }
 
         /// <summary>
@@ -1016,7 +1023,41 @@ namespace AlphaChiTech.Virtualization
                 var dataPage = SafeGetPage(page, false, null, index);
                 dataPage.InsertAt(offset, item, timestamp, this.ExpiryComparer);
             }
-            AddOrUpdateAdjustment(page, 1);
+            int adj = AddOrUpdateAdjustment(page, 1);
+
+            if(page == _BasePage && adj == this.PageSize*2)
+            {
+                lock (_PageLock)
+                {
+                    if (IsPageWired(page))
+                    {
+                        var dataPage = SafeGetPage(page, false, null, index);
+                        ISourcePage<T> newdataPage = null;
+                        if (IsPageWired(page - 1))
+                        {
+                            newdataPage = SafeGetPage(page-1, false, null, index);
+                        }
+                        else
+                        {
+                            newdataPage = this._Reclaimer.MakePage(page - 1, this.PageSize);
+                            _Pages.Add(page - 1, newdataPage);
+                        }
+
+                        for (int loop = 0; loop < this.PageSize; loop++)
+                        {
+                            var i = dataPage.GetAt(0);
+
+                            dataPage.RemoveAt(0, null, null);
+                            newdataPage.Append(i, null, null);
+                        }
+
+                    }
+
+                    AddOrUpdateAdjustment(page, -this.PageSize);
+
+                    _BasePage--;
+                }
+            }
 
             if (this.IsAsync)
             {
@@ -1126,7 +1167,7 @@ namespace AlphaChiTech.Virtualization
 
                         foreach (var p in l)
                         {
-                            if (p.Page > 0)
+                            if (p.Page != _BasePage)
                             {
                                 lock (_Pages)
                                 {

@@ -19,7 +19,7 @@ namespace AlphaChiTech.Virtualization
         {
             List<ISourcePage<T>> ret = new List<ISourcePage<T>>();
 
-            var candiadates = (from p in pages where p.CanReclaimPage == true && p.Page > 0 orderby p.LastTouch select p).Take(pagesNeeded);
+            var candiadates = (from p in pages where p.CanReclaimPage == true orderby p.LastTouch select p).Take(pagesNeeded);
 
             foreach (var c in candiadates) ret.Add(c);
 

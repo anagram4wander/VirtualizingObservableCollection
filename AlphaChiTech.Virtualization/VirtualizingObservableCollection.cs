@@ -266,7 +266,7 @@ namespace AlphaChiTech.Virtualization
             if (args.NeedsReset)
             {
                 // Send a reset..
-                RaiseCollectionChangedEvent(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                RaiseCollectionChangedEvent(_CC_ResetArgs);
             }
             OnCountTouched();
         }
@@ -307,6 +307,8 @@ namespace AlphaChiTech.Virtualization
 
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
+            if (_BulkCount > 0) return;
+
             var evnt = CollectionChanged;
 
             if (evnt != null)
@@ -321,7 +323,8 @@ namespace AlphaChiTech.Virtualization
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private static PropertyChangedEventArgs _PC_CountArgs = new PropertyChangedEventArgs("Count"); 
+        private static PropertyChangedEventArgs _PC_CountArgs = new PropertyChangedEventArgs("Count");
+        private static NotifyCollectionChangedEventArgs _CC_ResetArgs = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
 
         private void OnCountTouched()
         {
@@ -330,6 +333,8 @@ namespace AlphaChiTech.Virtualization
 
         protected void RaisePropertyChanged(PropertyChangedEventArgs args)
         {
+            if (_BulkCount > 0) return;
+
             var evnt = PropertyChanged;
 
             if (evnt != null)
@@ -345,6 +350,56 @@ namespace AlphaChiTech.Virtualization
         protected String _DefaultSelectionContext = new Guid().ToString();
         private IItemSourceProvider<T> _Provider = null;
         private IItemSourceProviderAsync<T> _ProviderAsync = null;
+        private int _BulkCount = 0;
+
+        internal void ReleaseBulkMode()
+        {
+            if (_BulkCount > 0) _BulkCount--;
+
+            if(_BulkCount == 0)
+            {
+                RaiseCollectionChangedEvent(_CC_ResetArgs);
+                RaisePropertyChanged(_PC_CountArgs);
+            }
+        }
+
+        public BulkMode EnterBulkMode()
+        {
+            _BulkCount++;
+
+            return new BulkMode(this);
+        }
+
+        public class BulkMode : IDisposable
+        {
+            public BulkMode(VirtualizingObservableCollection<T> voc)
+            {
+                _voc = voc;
+            }
+
+            private VirtualizingObservableCollection<T> _voc = null;
+
+            bool _IsDisposed = false;
+
+            public void Dispose()
+            {
+                OnDispose();
+            }
+
+            void OnDispose()
+            {
+                if(!_IsDisposed)
+                {
+                    _IsDisposed = true;
+                    if (_voc != null) _voc.ReleaseBulkMode();
+                }
+            }
+
+            ~BulkMode()
+            {
+                OnDispose();
+            }
+        }
 
         /// <summary>
         /// Gets the provider as editable.
