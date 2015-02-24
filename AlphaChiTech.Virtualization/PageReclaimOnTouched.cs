@@ -5,6 +5,11 @@ using System.Text;
 
 namespace AlphaChiTech.Virtualization
 {
+    /// <summary>
+    /// PageReclainOnTouched is a Page Reclaimer implementation that releases pages based on when
+    /// they where last touched.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class PageReclaimOnTouched<T> : IPageReclaimer<T>
     {
 

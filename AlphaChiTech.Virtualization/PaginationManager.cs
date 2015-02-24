@@ -691,10 +691,12 @@ namespace AlphaChiTech.Virtualization
         /// </value>
         public int GetCount(bool asyncOK)
         {
-           
-                int ret = 0;
 
-                if (!_HasGotCount)
+            int ret = 0;
+
+            if (!_HasGotCount)
+            {
+                lock (this)
                 {
                     if (!IsAsync)
                     {
@@ -705,6 +707,7 @@ namespace AlphaChiTech.Virtualization
                         if (!asyncOK)
                         {
                             ret = this.ProviderAsync.Count;
+                            _LocalCount = ret;
                         }
                         else
                         {
@@ -715,11 +718,11 @@ namespace AlphaChiTech.Virtualization
                     }
 
                     _HasGotCount = true;
-                    _LocalCount = ret;
                 }
+            }
 
-                return _LocalCount;
-            
+            return _LocalCount;
+
         }
 
         private async void GetCountAsync(CancellationTokenSource cts)
@@ -730,8 +733,11 @@ namespace AlphaChiTech.Virtualization
 
                 if (!cts.IsCancellationRequested)
                 {
-                    _HasGotCount = true;
-                    _LocalCount = ret;
+                    lock (this)
+                    {
+                        _HasGotCount = true;
+                        _LocalCount = ret;
+                    }
                 }
 
                 if (!cts.IsCancellationRequested) 
@@ -742,10 +748,10 @@ namespace AlphaChiTech.Virtualization
         }
 
         /// <summary>
-        /// Indexes the of.
+        /// Gets the Index of item.
         /// </summary>
         /// <param name="item">The item.</param>
-        /// <returns></returns>
+        /// <returns>the index of the item, or -1 if not found</returns>
         public int IndexOf(T item)
         {
             // Attempt to get the item from the pages, else call  the provider to get it..
@@ -822,6 +828,12 @@ namespace AlphaChiTech.Virtualization
 
         #region IEditableProvider<T> Implementation
 
+        /// <summary>
+        /// Called when [append].
+        /// </summary>
+        /// <param name="item">The item.</param>
+        /// <param name="timestamp">The timestamp.</param>
+        /// <returns></returns>
         public int OnAppend(T item, object timestamp)
         {
             ClearOptimizations();
@@ -874,6 +886,14 @@ namespace AlphaChiTech.Virtualization
             return index;
         }
 
+        /// <summary>
+        /// Gets the page, if use placeholders is false - then gets page sync else async.
+        /// </summary>
+        /// <param name="page">The page.</param>
+        /// <param name="allowPlaceholders">if set to <c>true</c> [allow placeholders].</param>
+        /// <param name="voc">The voc.</param>
+        /// <param name="index">The index that this page refers to (effectively the pageoffset.</param>
+        /// <returns></returns>
         protected ISourcePage<T> SafeGetPage(int page, bool allowPlaceholders, object voc, int index)
         {
             ISourcePage<T> ret = null;

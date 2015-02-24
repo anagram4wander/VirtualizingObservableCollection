@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace AlphaChiTech.Virtualization
 {
@@ -12,20 +13,58 @@ namespace AlphaChiTech.Virtualization
     {
         #region Ctors Etc
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}"/> class.
+        /// </summary>
+        /// <param name="provider">The provider.</param>
         public VirtualizingObservableCollection(IItemSourceProvider<T> provider)
         {
             this.Provider = provider;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}"/> class.
+        /// </summary>
+        /// <param name="asyncProvider">The asynchronous provider.</param>
         public VirtualizingObservableCollection(IItemSourceProviderAsync<T> asyncProvider)
         {
             this.ProviderAsync = asyncProvider;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}"/> class.
+        /// </summary>
+        /// <param name="provider">The provider.</param>
+        /// <param name="reclaimer">The optional reclaimer.</param>
+        /// <param name="expiryComparer">The optional expiry comparer.</param>
+        /// <param name="pageSize">Size of the page.</param>
+        /// <param name="maxPages">The maximum pages.</param>
+        /// <param name="maxDeltas">The maximum deltas.</param>
+        /// <param name="maxDistance">The maximum distance.</param>
+        public VirtualizingObservableCollection(
+            IPagedSourceProvider<T> provider,
+            IPageReclaimer<T> reclaimer = null,
+            IPageExpiryComparer expiryComparer = null,
+            int pageSize = 100,
+            int maxPages = 100,
+            int maxDeltas = -1,
+            int maxDistance = -1
+            )
+        {
+            this.Provider = new PaginationManager<T>(provider, reclaimer, expiryComparer, pageSize, maxPages, maxDeltas, maxDistance);
+        }
+
+
         #endregion Ctors Etc
 
         #region IEnumerable Implementation
 
+        /// <summary>
+        /// Returns an enumerator that iterates through a collection.
+        /// </summary>
+        /// <returns>
+        /// An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
+        /// </returns>
         public IEnumerator GetEnumerator()
         {
             string sc = new Guid().ToString();
@@ -44,6 +83,12 @@ namespace AlphaChiTech.Virtualization
 
         #region IEnumerable<T> Implementation
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.
+        /// </returns>
         IEnumerator<T> IEnumerable<T>.GetEnumerator()
         {
             string sc = new Guid().ToString();
@@ -67,11 +112,19 @@ namespace AlphaChiTech.Virtualization
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Gets the number of elements contained in the <see cref="T:System.Collections.ICollection" />.
+        /// </summary>
+        /// <returns>The number of elements contained in the <see cref="T:System.Collections.ICollection" />.</returns>
         public int Count
         {
             get { return InternalGetCount(); }
         }
 
+        /// <summary>
+        /// Gets a value indicating whether access to the <see cref="T:System.Collections.ICollection" /> is synchronized (thread safe).
+        /// </summary>
+        /// <returns>true if access to the <see cref="T:System.Collections.ICollection" /> is synchronized (thread safe); otherwise, false.</returns>
         public bool IsSynchronized
         {
             get { return false; }
@@ -79,6 +132,10 @@ namespace AlphaChiTech.Virtualization
 
         private object _SyncRoot = new object();
 
+        /// <summary>
+        /// Gets an object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.
+        /// </summary>
+        /// <returns>An object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.</returns>
         public object SyncRoot
         {
             get { return _SyncRoot; }
@@ -88,16 +145,30 @@ namespace AlphaChiTech.Virtualization
 
         #region ICollection<T> Implementation
 
+        /// <summary>
+        /// Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.
+        /// </summary>
+        /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
         public void Add(T item)
         {
             InternalAdd(item, null);
         }
 
+        /// <summary>
+        /// Resets the collection - aka forces a get all data, including the count <see cref="T:System.Collections.Generic.ICollection`1" />.
+        /// </summary>
         public void Clear()
         {
             InternalClear();
         }
 
+        /// <summary>
+        /// Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.
+        /// </summary>
+        /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+        /// <returns>
+        /// true if <paramref name="item" /> is found in the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false.
+        /// </returns>
         public bool Contains(T item)
         {
             return IndexOf(item) != -1 ? true : false;
@@ -108,11 +179,22 @@ namespace AlphaChiTech.Virtualization
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.
+        /// </summary>
+        /// <returns>true if the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only; otherwise, false.</returns>
         public bool IsReadOnly
         {
             get { return false; }
         }
 
+        /// <summary>
+        /// Removes the first occurrence of a specific object from the <see cref="T:System.Collections.Generic.ICollection`1" />.
+        /// </summary>
+        /// <param name="item">The object to remove from the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
+        /// <returns>
+        /// true if <paramref name="item" /> was successfully removed from the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false. This method also returns false if <paramref name="item" /> is not found in the original <see cref="T:System.Collections.Generic.ICollection`1" />.
+        /// </returns>
         public bool Remove(T item)
         {
             return InternalRemoveAt(IndexOf(item));
@@ -165,46 +247,117 @@ namespace AlphaChiTech.Virtualization
         {
             InternalInsertAt(index, item, updatedAt);
         }
+        /// <summary>
+        /// Adds the range.
+        /// </summary>
+        /// <param name="newValues">The new values.</param>
+        /// <param name="timestamp">The updatedat object.</param>
+        /// <returns>Index of the last appended object</returns>
+        public int AddRange(IEnumerable<T> newValues, object timestamp = null)
+        {
+            var edit = GetProviderAsEditable();
+
+            int index = -1;
+            List<T> items = new List<T>();
+
+            foreach (var item in newValues)
+            {
+                items.Add(item);
+                index = edit.OnAppend(item, timestamp);
+
+                NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
+                RaiseCollectionChangedEvent(args);
+            }
+
+
+            OnCountTouched();
+
+
+            return index;
+        }
 
         #endregion Extended CRUD operators that take into account the DateTime of the change
 
         #region IList Implementation
 
+        /// <summary>
+        /// Adds an item to the <see cref="T:System.Collections.IList" />.
+        /// </summary>
+        /// <param name="value">The object to add to the <see cref="T:System.Collections.IList" />.</param>
+        /// <returns>
+        /// The position into which the new element was inserted, or -1 to indicate that the item was not inserted into the collection.
+        /// </returns>
         public int Add(object value)
         {
             return InternalAdd((T)value, null);
         }
 
+        /// <summary>
+        /// Determines whether the <see cref="T:System.Collections.IList" /> contains a specific value.
+        /// </summary>
+        /// <param name="value">The object to locate in the <see cref="T:System.Collections.IList" />.</param>
+        /// <returns>
+        /// true if the <see cref="T:System.Object" /> is found in the <see cref="T:System.Collections.IList" />; otherwise, false.
+        /// </returns>
         public bool Contains(object value)
         {
             return Contains((T)value);
         }
 
+        /// <summary>
+        /// Determines the index of a specific item in the <see cref="T:System.Collections.IList" />.
+        /// </summary>
+        /// <param name="value">The object to locate in the <see cref="T:System.Collections.IList" />.</param>
+        /// <returns>
+        /// The index of <paramref name="value" /> if found in the list; otherwise, -1.
+        /// </returns>
         public int IndexOf(object value)
         {
             return IndexOf((T)value);
         }
 
+        /// <summary>
+        /// Inserts an item to the <see cref="T:System.Collections.IList" /> at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index at which <paramref name="value" /> should be inserted.</param>
+        /// <param name="value">The object to insert into the <see cref="T:System.Collections.IList" />.</param>
         public void Insert(int index, object value)
         {
             Insert(index, (T)value);
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the <see cref="T:System.Collections.IList" /> has a fixed size.
+        /// </summary>
+        /// <returns>true if the <see cref="T:System.Collections.IList" /> has a fixed size; otherwise, false.</returns>
         public bool IsFixedSize
         {
             get { return false; }
         }
 
+        /// <summary>
+        /// Removes the first occurrence of a specific object from the <see cref="T:System.Collections.IList" />.
+        /// </summary>
+        /// <param name="value">The object to remove from the <see cref="T:System.Collections.IList" />.</param>
         public void Remove(object value)
         {
             Remove((T)value);
         }
 
+        /// <summary>
+        /// Removes the <see cref="T:System.Collections.IList" /> item at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the item to remove.</param>
         public void RemoveAt(int index)
         {
             InternalRemoveAt(index);
         }
 
+        /// <summary>
+        /// Gets or sets the element at the specified index.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns></returns>
         public object this[int index]
         {
             get
@@ -221,16 +374,33 @@ namespace AlphaChiTech.Virtualization
 
         #region IList<T> Implementation
 
+        /// <summary>
+        /// Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.
+        /// </summary>
+        /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.IList`1" />.</param>
+        /// <returns>
+        /// The index of <paramref name="item" /> if found in the list; otherwise, -1.
+        /// </returns>
         public int IndexOf(T item)
         {
             return InternalIndexOf(item);
         }
 
+        /// <summary>
+        /// Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
+        /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
         public void Insert(int index, T item)
         {
             InternalInsertAt(index, item);
         }
 
+        /// <summary>
+        /// Gets or sets the element at the specified index.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <returns></returns>
         T IList<T>.this[int index]
         {
             get
@@ -247,6 +417,12 @@ namespace AlphaChiTech.Virtualization
 
         #region Public Properties
 
+        /// <summary>
+        /// Gets or sets the provider if its asynchronous.
+        /// </summary>
+        /// <value>
+        /// The provider asynchronous.
+        /// </value>
         public IItemSourceProviderAsync<T> ProviderAsync
         {
             get { return _ProviderAsync; }
@@ -271,6 +447,12 @@ namespace AlphaChiTech.Virtualization
             OnCountTouched();
         }
 
+        /// <summary>
+        /// Gets or sets the provider if its not asynchronous.
+        /// </summary>
+        /// <value>
+        /// The provider.
+        /// </value>
         public IItemSourceProvider<T> Provider
         {
             get { return _Provider; }
@@ -303,8 +485,27 @@ namespace AlphaChiTech.Virtualization
 
         #region INotifyCollectionChanged Implementation
 
+        private bool _SupressEventErrors = false;
+
+        public bool SupressEventErrors
+        {
+            get
+            {
+                return _SupressEventErrors;
+            }
+
+            set
+            {
+                _SupressEventErrors = value;
+            }
+        }
+
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
+        /// <summary>
+        /// Raises the collection changed event.
+        /// </summary>
+        /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs"/> instance containing the event data.</param>
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
             if (_BulkCount > 0) return;
@@ -313,7 +514,17 @@ namespace AlphaChiTech.Virtualization
 
             if (evnt != null)
             {
-                evnt(this, args);
+                try
+                {
+                    evnt(this, args);
+                }
+                catch (Exception ex)
+                {
+                    if (!this.SupressEventErrors)
+                    {
+                        throw ex;
+                    }
+                }
             }
         }
 
@@ -345,24 +556,26 @@ namespace AlphaChiTech.Virtualization
 
         #endregion INotifyPropertyChanged implementation
 
-        #region Internal implementation
+        #region Bulk Operation implementation
 
-        protected String _DefaultSelectionContext = new Guid().ToString();
-        private IItemSourceProvider<T> _Provider = null;
-        private IItemSourceProviderAsync<T> _ProviderAsync = null;
-        private int _BulkCount = 0;
-
+        /// <summary>
+        /// Releases the bulk mode.
+        /// </summary>
         internal void ReleaseBulkMode()
         {
             if (_BulkCount > 0) _BulkCount--;
 
-            if(_BulkCount == 0)
+            if (_BulkCount == 0)
             {
                 RaiseCollectionChangedEvent(_CC_ResetArgs);
                 RaisePropertyChanged(_PC_CountArgs);
             }
         }
 
+        /// <summary>
+        /// Enters the bulk mode.
+        /// </summary>
+        /// <returns></returns>
         public BulkMode EnterBulkMode()
         {
             _BulkCount++;
@@ -370,6 +583,9 @@ namespace AlphaChiTech.Virtualization
             return new BulkMode(this);
         }
 
+        /// <summary>
+        /// The Bulk mode IDisposable proxy
+        /// </summary>
         public class BulkMode : IDisposable
         {
             public BulkMode(VirtualizingObservableCollection<T> voc)
@@ -388,7 +604,7 @@ namespace AlphaChiTech.Virtualization
 
             void OnDispose()
             {
-                if(!_IsDisposed)
+                if (!_IsDisposed)
                 {
                     _IsDisposed = true;
                     if (_voc != null) _voc.ReleaseBulkMode();
@@ -400,6 +616,20 @@ namespace AlphaChiTech.Virtualization
                 OnDispose();
             }
         }
+
+        #endregion Bulk Operation implementation
+
+        #region Private Properties
+
+        protected String _DefaultSelectionContext = new Guid().ToString();
+        private IItemSourceProvider<T> _Provider = null;
+        private IItemSourceProviderAsync<T> _ProviderAsync = null;
+        private int _BulkCount = 0;
+
+        #endregion Private Properties
+
+        #region Internal implementation
+
 
         /// <summary>
         /// Gets the provider as editable.
@@ -428,6 +658,13 @@ namespace AlphaChiTech.Virtualization
             return ret;
         }
 
+        /// <summary>
+        /// Replaces oldValue with newValue at index if updatedat is newer or null.
+        /// </summary>
+        /// <param name="index">The index.</param>
+        /// <param name="oldValue">The old value.</param>
+        /// <param name="newValue">The new value.</param>
+        /// <param name="timestamp">The timestamp.</param>
         internal void ReplaceAt(int index, T oldValue, T newValue, object timestamp)
         {
             var edit = this.GetProviderAsEditable();
@@ -463,7 +700,7 @@ namespace AlphaChiTech.Virtualization
             }
             else
             {
-                return this.ProviderAsync.GetAt(index, this, allowPlaceholder).Result;
+                return Task.Run(() => this.ProviderAsync.GetAt(index, this, allowPlaceholder)).Result;
             }
         }
 
@@ -495,61 +732,6 @@ namespace AlphaChiTech.Virtualization
             return index;
         }
 
-
-        public int AddRange(IEnumerable<T> newValues, object timestamp = null)
-        {
-            var edit = GetProviderAsEditable();
-
-            int index = -1;
-            List<T> items = new List<T>();
-
-            foreach(var item in newValues)
-            {
-                items.Add(item);
-                index = edit.OnAppend(item, timestamp);
-
-                NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
-                RaiseCollectionChangedEvent(args);
-            }
-
-
-            OnCountTouched();
-
-
-            return index;
-        }
-
-        //public bool RemoveAtRange(int index, int count, object timestamp = null)
-        //{
-        //    bool removedall = true;
-        //    for(int loop = index; loop < index + count; loop++)
-        //    {
-        //        T oldValue = InternalGetValue(loop, _DefaultSelectionContext);
-
-        //        if (oldValue == null)
-        //        {
-        //            removedall = false;
-        //        }
-        //        else
-        //        {
-        //            var edit = GetProviderAsEditable();
-        //            edit.OnRemove(index, oldValue, timestamp);
-
-        //            NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
-        //            RaiseCollectionChangedEvent(args);
-
-
-                 
-        //        }
-
-        //    }
-
-        //    OnCountTouched();
-
-        //    return removedall;
-        //}
-
-
         int InternalGetCount()
         {
             int ret = 0;
@@ -560,7 +742,7 @@ namespace AlphaChiTech.Virtualization
             }
             else
             {
-                ret = this.ProviderAsync.Count.Result;
+                ret = Task.Run( () => this.ProviderAsync.Count).Result;
             }
 
 
@@ -609,7 +791,7 @@ namespace AlphaChiTech.Virtualization
             }
             else
             {
-                return this.ProviderAsync.IndexOf(item).Result;
+                return Task.Run( () => this.ProviderAsync.IndexOf(item)).Result;
             }
         }
 

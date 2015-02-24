@@ -45,6 +45,8 @@
   <ItemGroup>
     <Compile Include="ActionVirtualizationWrapper.cs" />
     <Compile Include="BaseActionVirtualization.cs" />
+    <Compile Include="BasePagedSourceProvider.cs" />
+    <Compile Include="PagedSourceProviderMakeSync.cs" />
     <Compile Include="BaseRepeatableActionVirtualization.cs" />
     <Compile Include="DateBasedPageExpiryComparer.cs" />
     <Compile Include="ExecuteResetWA.cs" />
@@ -63,6 +65,7 @@
     <Compile Include="IVirtualizationAction.cs" />
     <Compile Include="PageDelta.cs" />
     <Compile Include="PagedSourceItemsPacket.cs" />
+    <Compile Include="PagedSourceProviderMakeAsync.cs" />
     <Compile Include="PageFetchStateEnum.cs" />
     <Compile Include="PageReclaimOnTouched.cs" />
     <Compile Include="PaginationManager.cs" />
