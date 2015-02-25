@@ -701,6 +701,7 @@ namespace AlphaChiTech.Virtualization
                     if (!IsAsync)
                     {
                         ret = this.Provider.Count;
+                        _LocalCount = ret;
                     }
                     else
                     {
