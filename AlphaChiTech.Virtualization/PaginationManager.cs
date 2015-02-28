@@ -484,6 +484,14 @@ namespace AlphaChiTech.Virtualization
 
         }
 
+        private int _StepToJumpThreashold = 10;
+
+        public int StepToJumpThreashold
+        {
+            get { return _StepToJumpThreashold; }
+            set { _StepToJumpThreashold = value; }
+        }
+
         private void DoStepBackwards(ref int page, ref int offset, int stepAmount)
         {
             bool done = false;
@@ -492,8 +500,7 @@ namespace AlphaChiTech.Virtualization
             while(!done)
             {
 
-#if EXPEREMENTAL
-                if(stepAmount>this.PageSize * 10 && ignoreSteps<=0)
+                if (stepAmount > this.PageSize * StepToJumpThreashold && ignoreSteps <= 0)
                 {
                     int targetPage =  page - stepAmount/this.PageSize;
                     int sourcePage = page;
@@ -523,7 +530,6 @@ namespace AlphaChiTech.Virtualization
                         ignoreSteps = sourcePage - adj.Last().Page;
                     }
                 }
-#endif
 
                 if (!done)
                 {
@@ -556,8 +562,7 @@ namespace AlphaChiTech.Virtualization
             while(!done)
             {
 
-#if EXPEREMENTAL
-                if (stepAmount > this.PageSize * 10 && ignoreSteps<=0)
+                if (stepAmount > this.PageSize * StepToJumpThreashold && ignoreSteps <= 0)
                 {
                     int targetPage = page + stepAmount / this.PageSize;
                     int sourcePage = page;
@@ -587,7 +592,6 @@ namespace AlphaChiTech.Virtualization
                         ignoreSteps = adj.Last().Page - sourcePage;
                     }
                 }
-#endif
 
                 if (!done)
                 {
