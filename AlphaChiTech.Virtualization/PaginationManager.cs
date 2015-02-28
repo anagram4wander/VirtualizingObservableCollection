@@ -487,23 +487,63 @@ namespace AlphaChiTech.Virtualization
         private void DoStepBackwards(ref int page, ref int offset, int stepAmount)
         {
             bool done = false;
+            int ignoreSteps = -1;
 
             while(!done)
             {
-                int items = this.PageSize;
-                if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
-                if(offset - stepAmount < 0)
+
+#if EXPEREMENTAL
+                if(stepAmount>this.PageSize * 10 && ignoreSteps<=0)
                 {
-                    stepAmount -= (offset+1);
-                    page--;
-                    items = this.PageSize;
+                    int targetPage =  page - stepAmount/this.PageSize;
+                    int sourcePage = page;
+                    var adj = (from a in _Deltas.Values where a.Page >= targetPage && a.Page <= sourcePage orderby a.Page select a);
+                    if(adj.Count() == 0)
+                    {
+                        page = targetPage;
+                        stepAmount -= (sourcePage - targetPage) * this.PageSize;
+
+                        if(stepAmount == 0)
+                        {
+                            done = true;
+                        }
+                    } else if(adj.Last().Page < page-2)
+                    {
+                        targetPage = adj.Last().Page + 1;
+                        page = targetPage;
+                        stepAmount -= (sourcePage - targetPage) * this.PageSize;
+
+                        if (stepAmount == 0)
+                        {
+                            done = true;
+                        }
+                    }
+                    else
+                    {
+                        ignoreSteps = sourcePage - adj.Last().Page;
+                    }
+                }
+#endif
+
+                if (!done)
+                {
+                    int items = this.PageSize;
                     if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
-                    offset = items-1;
-                } 
-                else
-                {
-                    offset -= stepAmount;
-                    done = true;
+                    if (offset - stepAmount < 0)
+                    {
+                        stepAmount -= (offset + 1);
+                        page--;
+                        items = this.PageSize;
+                        if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
+                        offset = items - 1;
+                    }
+                    else
+                    {
+                        offset -= stepAmount;
+                        done = true;
+                    }
+
+                    ignoreSteps--;
                 }
             }
         }
@@ -511,21 +551,61 @@ namespace AlphaChiTech.Virtualization
         private void DoStepForward(ref int page, ref int offset, int stepAmount)
         {
             bool done = false;
+            int ignoreSteps = -1;
 
             while(!done)
             {
-                int items = this.PageSize;
-                if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
-                if(items<=offset+stepAmount)
+
+#if EXPEREMENTAL
+                if (stepAmount > this.PageSize * 10 && ignoreSteps<=0)
                 {
-                    stepAmount -= (items)-offset;
-                    offset = 0;
-                    page++;
+                    int targetPage = page + stepAmount / this.PageSize;
+                    int sourcePage = page;
+                    var adj = (from a in _Deltas.Values where a.Page <= targetPage && a.Page >= sourcePage orderby a.Page select a);
+                    if (adj.Count() == 0)
+                    {
+                        page = targetPage;
+                        stepAmount -= (targetPage - sourcePage) * this.PageSize;
+
+                        if (stepAmount == 0)
+                        {
+                            done = true;
+                        }
+                    }
+                    else if (adj.Last().Page > page - 2)
+                    {
+                        targetPage = adj.Last().Page - 1;
+                        page = targetPage;
+                        stepAmount -= (targetPage - sourcePage) * this.PageSize;
+
+                        if (stepAmount == 0)
+                        {
+                            done = true;
+                        }
+                    } else
+                    {
+                        ignoreSteps = adj.Last().Page - sourcePage;
+                    }
                 }
-                else
+#endif
+
+                if (!done)
                 {
-                    offset += stepAmount;
-                    done = true;
+                    int items = this.PageSize;
+                    if (_Deltas.ContainsKey(page)) items += _Deltas[page].Delta;
+                    if (items <= offset + stepAmount)
+                    {
+                        stepAmount -= (items) - offset;
+                        offset = 0;
+                        page++;
+                    }
+                    else
+                    {
+                        offset += stepAmount;
+                        done = true;
+                    }
+
+                    ignoreSteps--;
                 }
             }
         }
