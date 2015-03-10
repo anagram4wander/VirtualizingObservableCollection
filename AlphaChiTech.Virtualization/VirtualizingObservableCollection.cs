@@ -682,10 +682,31 @@ namespace AlphaChiTech.Virtualization
         {
             if(this.Provider != null)
             {
-                this.Provider.OnReset(0);
+                this.Provider.OnReset(this.Provider.GetCount(false));
             } else
             {
-                this.ProviderAsync.OnReset(0);
+                this.ProviderAsync.OnReset(Task.Run(() => this.ProviderAsync.Count).Result);
+            }
+        }
+
+        public async void ResetAsync()
+        {
+            if(this.Provider != null)
+            {
+                this.Provider.OnReset(-1);
+
+                Task.Run(() =>
+                    {
+                        int count = this.Provider.GetCount(false);
+                        VirtualizationManager.Instance.RunOnUI(() =>
+                            this.Provider.OnReset(count)
+                        );
+                    });
+               
+            } 
+            else 
+            {
+                this.ProviderAsync.OnReset(await this.ProviderAsync.Count);
             }
         }
 

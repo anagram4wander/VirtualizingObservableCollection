@@ -869,10 +869,21 @@ namespace AlphaChiTech.Virtualization
         /// <param name="count">The count.</param>
         public void OnReset(int count)
         {
+            if(count < 0)
+            {
+                _HasGotCount = false;
+                return;
+            }
+
             CancelAllRequests();
 
+            lock (_PageLock)
+            {
+                DropAllDeltasAndPages();
+            }
+
             ClearOptimizations();
-            _HasGotCount = false;
+            _HasGotCount = true;
 
             if (!IsAsync)
             {
@@ -883,14 +894,7 @@ namespace AlphaChiTech.Virtualization
                 this.ProviderAsync.OnReset(count);
             }
 
-            lock (_PageLock)
-            {
-                DropAllDeltasAndPages();
-            }
-
             RaiseCountChanged(true, count);
-
-            GetCount(true);
         }
 
         /// <summary>
