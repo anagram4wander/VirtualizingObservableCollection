@@ -71,6 +71,8 @@ namespace AlphaChiTech.Virtualization
                     switch (action.ThreadModel)
                     {
                         case VirtualActionThreadModelEnum.UseUIThread:
+                            if (UIThreadExcecuteAction == null) // PLV
+                              throw new Exception( "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)" );
                             UIThreadExcecuteAction.Invoke(() => action.DoAction());
                             break;
                         case VirtualActionThreadModelEnum.Background:
@@ -115,6 +117,8 @@ namespace AlphaChiTech.Virtualization
 
         public void RunOnUI(IVirtualizationAction action)
         {
+            if (UIThreadExcecuteAction == null) // PLV
+               throw new Exception( "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)" );
             UIThreadExcecuteAction.Invoke(() => action.DoAction());
         }
 
