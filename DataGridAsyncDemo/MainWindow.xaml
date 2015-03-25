@@ -9,12 +9,12 @@
       <RowDefinition Height="Auto" />
       <RowDefinition />
     </Grid.RowDefinitions>
-    <Button x:Name="DbgButton"
+    <!--<Button x:Name="DbgButton"
             Grid.Row="0"
             HorizontalAlignment="Left"
             Click="DbgButton_Click">
       Dbg
-    </Button>
+    </Button>-->
 
     <DataGrid x:Name="TstDataGridAsyncFilterSort"
               Grid.Row="1"
