@@ -14,5 +14,6 @@ namespace AlphaChiTech.Virtualization
 
         Task<int> GetCountAsync();
 
+        Task<int> IndexOfAsync( T item );
     }
 }

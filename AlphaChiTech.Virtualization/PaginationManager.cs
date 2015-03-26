@@ -791,7 +791,8 @@ namespace AlphaChiTech.Virtualization
                     {
                         if (!asyncOK)
                         {
-                            ret = this.ProviderAsync.Count;
+                            ret = this.ProviderAsync.GetCountAsync().Result;
+                            //ret = this.ProviderAsync.Count;
                             _LocalCount = ret;
                         }
                         else
@@ -859,7 +860,8 @@ namespace AlphaChiTech.Virtualization
             }
             else
             {
-                return this.ProviderAsync.IndexOf(item);
+                return this.ProviderAsync.IndexOfAsync( item ).Result;
+                //return this.ProviderAsync.IndexOf(item);
             }
         }
 
@@ -867,34 +869,40 @@ namespace AlphaChiTech.Virtualization
         /// Resets the specified count.
         /// </summary>
         /// <param name="count">The count.</param>
-        public void OnReset(int count)
+        public void OnReset( int count )
         {
-            if(count < 0)
+          CancelAllRequests();
+
+          lock (_PageLock)
+          {
+            DropAllDeltasAndPages();
+          }
+
+          ClearOptimizations();
+
+          if (count < 0)
+          {
+            _HasGotCount = false;
+          }
+          else
+          {
+            lock (this)
             {
-                _HasGotCount = false;
-                return;
+              _LocalCount = count;
+              _HasGotCount = true;
             }
+          }
 
-            CancelAllRequests();
+          if (!IsAsync)
+          {
+            this.Provider.OnReset( count );
+          }
+          else
+          {
+            this.ProviderAsync.OnReset( count );
+          }
 
-            lock (_PageLock)
-            {
-                DropAllDeltasAndPages();
-            }
-
-            ClearOptimizations();
-            _HasGotCount = true;
-
-            if (!IsAsync)
-            {
-                this.Provider.OnReset(count);
-            }
-            else
-            {
-                this.ProviderAsync.OnReset(count);
-            }
-
-            RaiseCountChanged(true, count);
+          RaiseCountChanged( true, count );
         }
 
         /// <summary>
