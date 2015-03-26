@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AlphaChiTech.Virtualization
 {
-    public class PagedSourceProviderMakeAsync<T> : BasePagedSourceProvider<T>, IPagedSourceProviderAsync<T>
+    public class PagedSourceProviderMakeAsync<T> : BasePagedSourceProvider<T>, IPagedSourceProviderAsync<T>, IProviderPreReset
     {
         public PagedSourceProviderMakeAsync()
         {
@@ -17,11 +17,29 @@ namespace AlphaChiTech.Virtualization
             Func<int> funcGetCount = null,
             Func<T, int> funcIndexOf = null,
             Action<int> actionOnReset = null,
-            Func<int, int, int, T> funcGetPlaceHolder = null
+            Func<int, int, int, T> funcGetPlaceHolder = null,
+            Action actionOnBeforeReset = null
             )
             : base(funcGetItemsAt, funcGetCount, funcIndexOf, actionOnReset)
         {
             this.FuncGetPlaceHolder = funcGetPlaceHolder;
+            this.ActionOnBeforeReset = actionOnBeforeReset;
+        }
+
+        public virtual void OnBeforeReset()
+        {
+            if (this.ActionOnBeforeReset != null)
+            {
+                this.ActionOnBeforeReset.Invoke();
+            }
+        }
+
+        Action _ActionOnBeforeReset = null;
+
+        public Action ActionOnBeforeReset
+        {
+            get { return _ActionOnBeforeReset; }
+            set { _ActionOnBeforeReset = value; }
         }
 
         private Func<int, int, int, T> _FuncGetPlaceHolder = null;
@@ -31,6 +49,7 @@ namespace AlphaChiTech.Virtualization
             get { return _FuncGetPlaceHolder; }
             set { _FuncGetPlaceHolder = value; }
         }
+
 
         public Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder)
         {

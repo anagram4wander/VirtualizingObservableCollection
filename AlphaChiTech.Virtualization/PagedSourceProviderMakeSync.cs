@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AlphaChiTech.Virtualization
 {
-    public class PagedSourceProviderMakeSync<T> : IPagedSourceProviderAsync<T>
+    public class PagedSourceProviderMakeSync<T> : IPagedSourceProviderAsync<T>, IProviderPreReset
     {
         public PagedSourceProviderMakeSync()
         {
@@ -18,7 +18,8 @@ namespace AlphaChiTech.Virtualization
             Func<T, int> funcIndexOf = null,
             Func<T, Task<int>> funcIndexOfAsync = null,
             Action<int> actionOnReset = null,
-            Func<int, int, int, T> funcGetPlaceHolder = null
+            Func<int, int, int, T> funcGetPlaceHolder = null,
+            Action actionOnBeforeReset = null
             )
         {
             this.FuncGetItemsAtAsync = funcGetItemsAtAsync;
@@ -27,7 +28,25 @@ namespace AlphaChiTech.Virtualization
             this.FuncIndexOfAsync = funcIndexOfAsync;
             this.ActionOnReset = actionOnReset;
             this.FuncGetPlaceHolder = funcGetPlaceHolder;
+            this.ActionOnBeforeReset = actionOnBeforeReset;
         }
+
+        public virtual void OnBeforeReset()
+        {
+            if(this.ActionOnBeforeReset != null)
+            {
+                this.ActionOnBeforeReset.Invoke();
+            }
+        }
+
+        Action _ActionOnBeforeReset = null;
+
+        public Action ActionOnBeforeReset
+        {
+            get { return _ActionOnBeforeReset; }
+            set { _ActionOnBeforeReset = value; }
+        }
+
 
         Func<T, Task<int>> _FuncIndexOfAsync = null;
 

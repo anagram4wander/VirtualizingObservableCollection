@@ -682,9 +682,17 @@ namespace AlphaChiTech.Virtualization
         {
             if(this.Provider != null)
             {
+                if (this.Provider is IProviderPreReset)
+                {
+                    (this.Provider as IProviderPreReset).OnBeforeReset();
+                }
                 this.Provider.OnReset(this.Provider.GetCount(false));
             } else
             {
+                if (this.ProviderAsync is IProviderPreReset)
+                {
+                    (this.ProviderAsync as IProviderPreReset).OnBeforeReset();
+                }
                 this.ProviderAsync.OnReset(Task.Run(() => this.ProviderAsync.Count).Result);
             }
         }
@@ -693,19 +701,38 @@ namespace AlphaChiTech.Virtualization
         {
             if(this.Provider != null)
             {
+                if (this.Provider is IProviderPreReset)
+                {
+                    (this.Provider as IProviderPreReset).OnBeforeReset();
+                }
                 this.Provider.OnReset(-1);
 
-                Task.Run(() =>
+                Task.Run( async () =>
                     {
-                        int count = this.Provider.GetCount(false);
-                        VirtualizationManager.Instance.RunOnUI(() =>
-                            this.Provider.OnReset(count)
-                        );
+                        if (this.Provider is IAsyncResetProvider)
+                        {
+                            int count = await (this.Provider as IAsyncResetProvider).GetCountAsync();
+                            VirtualizationManager.Instance.RunOnUI(() =>
+                                this.Provider.OnReset(count)
+                            );
+
+                        }
+                        else
+                        {
+                            int count = this.Provider.GetCount(false);
+                            VirtualizationManager.Instance.RunOnUI(() =>
+                                this.Provider.OnReset(count)
+                            );
+                        }
                     });
                
             } 
             else 
             {
+                if (this.ProviderAsync is IProviderPreReset)
+                {
+                    (this.ProviderAsync as IProviderPreReset).OnBeforeReset();
+                }
                 this.ProviderAsync.OnReset(await this.ProviderAsync.Count);
             }
         }

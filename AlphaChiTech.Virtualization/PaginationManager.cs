@@ -9,7 +9,17 @@ using System.Threading.Tasks;
 namespace AlphaChiTech.Virtualization
 {
 
-    public class PaginationManager<T> : IItemSourceProvider<T>, IEditableProvider<T>, IReclaimableService, INotifyCountChanged
+    public interface IAsyncResetProvider
+    {
+        Task<int> GetCountAsync();
+    }
+
+    public interface IProviderPreReset
+    {
+        void OnBeforeReset();
+    }
+
+    public class PaginationManager<T> : IItemSourceProvider<T>, IEditableProvider<T>, IReclaimableService, IAsyncResetProvider, IProviderPreReset, INotifyCountChanged
     {
         Dictionary<int, ISourcePage<T>> _Pages = new Dictionary<int, ISourcePage<T>>();
 
@@ -218,6 +228,7 @@ namespace AlphaChiTech.Virtualization
             {
                 _Deltas.Clear();
                 _Pages.Clear();
+                _BasePage = 0;
                 CancelAllRequests();
             }
         }
@@ -810,6 +821,25 @@ namespace AlphaChiTech.Virtualization
 
         }
 
+        public async Task<int> GetCountAsync()
+        {
+            int ret = 0;
+
+
+            if (!IsAsync)
+            {
+                ret = this.Provider.Count;
+            }
+            else
+            {
+                ret = await this.ProviderAsync.GetCountAsync();
+            }
+
+            _HasGotCount = true;
+
+            return ret;
+        }
+
         private async void GetCountAsync(CancellationTokenSource cts)
         {
             if (!cts.IsCancellationRequested)
@@ -895,6 +925,24 @@ namespace AlphaChiTech.Virtualization
             }
 
             RaiseCountChanged(true, count);
+        }
+
+        public void OnBeforeReset()
+        {
+            if(!IsAsync)
+            {
+                if(this.Provider is IProviderPreReset)
+                {
+                    (this.Provider as IProviderPreReset).OnBeforeReset();
+                }
+            }
+            else
+            {
+                if(this.ProviderAsync is IProviderPreReset)
+                {
+                    (this.ProviderAsync as IProviderPreReset).OnBeforeReset();
+                }
+            }
         }
 
         /// <summary>
