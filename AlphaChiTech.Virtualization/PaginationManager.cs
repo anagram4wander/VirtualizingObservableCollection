@@ -802,7 +802,8 @@ namespace AlphaChiTech.Virtualization
                     {
                         if (!asyncOK)
                         {
-                            ret = this.ProviderAsync.Count;
+                            ret = this.ProviderAsync.GetCountAsync().Result;
+                            //ret = this.ProviderAsync.Count;
                             _LocalCount = ret;
                         }
                         else
@@ -889,7 +890,8 @@ namespace AlphaChiTech.Virtualization
             }
             else
             {
-                return this.ProviderAsync.IndexOf(item);
+                return this.ProviderAsync.IndexOfAsync( item ).Result;
+                //return this.ProviderAsync.IndexOf(item);
             }
         }
 
@@ -899,12 +901,6 @@ namespace AlphaChiTech.Virtualization
         /// <param name="count">The count.</param>
         public void OnReset(int count)
         {
-            if(count < 0)
-            {
-                _HasGotCount = false;
-                return;
-            }
-
             CancelAllRequests();
 
             lock (_PageLock)
@@ -913,7 +909,19 @@ namespace AlphaChiTech.Virtualization
             }
 
             ClearOptimizations();
-            _HasGotCount = true;
+
+            if (count < 0)
+            {
+                _HasGotCount = false;
+            }
+            else
+            {
+                lock (this)
+                {
+                    _LocalCount = count;
+                    _HasGotCount = true;
+                }
+            }
 
             if (!IsAsync)
             {
@@ -925,6 +933,7 @@ namespace AlphaChiTech.Virtualization
             }
 
             RaiseCountChanged(true, count);
+            
         }
 
         public void OnBeforeReset()

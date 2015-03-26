@@ -680,20 +680,21 @@ namespace AlphaChiTech.Virtualization
 
         void InternalClear()
         {
-            if(this.Provider != null)
+            if (this.Provider != null)
             {
                 if (this.Provider is IProviderPreReset)
                 {
                     (this.Provider as IProviderPreReset).OnBeforeReset();
                 }
-                this.Provider.OnReset(this.Provider.GetCount(false));
-            } else
+                this.Provider.OnReset(-1);
+            }
+            else
             {
                 if (this.ProviderAsync is IProviderPreReset)
                 {
                     (this.ProviderAsync as IProviderPreReset).OnBeforeReset();
                 }
-                this.ProviderAsync.OnReset(Task.Run(() => this.ProviderAsync.Count).Result);
+                this.ProviderAsync.OnReset(-1);
             }
         }
 

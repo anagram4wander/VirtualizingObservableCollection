@@ -8,22 +8,27 @@ namespace AlphaChiTech.Virtualization
 {
     public class PagedSourceProviderMakeAsync<T> : BasePagedSourceProvider<T>, IPagedSourceProviderAsync<T>, IProviderPreReset
     {
-        public PagedSourceProviderMakeAsync()
+      private Func<T, Task<int>> _FuncIndexOfAsync = null;
+      private Func<int, int, int, T> _FuncGetPlaceHolder = null;
+
+      public PagedSourceProviderMakeAsync()
         {
         }
 
         public PagedSourceProviderMakeAsync(
             Func<int, int, PagedSourceItemsPacket<T>> funcGetItemsAt = null,
             Func<int> funcGetCount = null,
-            Func<T, int> funcIndexOf = null,
+            Func<T, Task<int>> funcIndexOfAsync = null,
             Action<int> actionOnReset = null,
             Func<int, int, int, T> funcGetPlaceHolder = null,
             Action actionOnBeforeReset = null
             )
-            : base(funcGetItemsAt, funcGetCount, funcIndexOf, actionOnReset)
+            : base(funcGetItemsAt, funcGetCount, null, actionOnReset)
+            //: base(funcGetItemsAt, funcGetCount, funcIndexOf, actionOnReset)
         {
             this.FuncGetPlaceHolder = funcGetPlaceHolder;
             this.ActionOnBeforeReset = actionOnBeforeReset;
+          _FuncIndexOfAsync = funcIndexOfAsync;
         }
 
         public virtual void OnBeforeReset()
@@ -42,14 +47,17 @@ namespace AlphaChiTech.Virtualization
             set { _ActionOnBeforeReset = value; }
         }
 
-        private Func<int, int, int, T> _FuncGetPlaceHolder = null;
-
         public Func<int, int, int, T> FuncGetPlaceHolder
         {
             get { return _FuncGetPlaceHolder; }
             set { _FuncGetPlaceHolder = value; }
         }
 
+        public Func<T, Task<int>> FuncIndexOfAsync
+        {
+          get { return _FuncIndexOfAsync; }
+          set { _FuncIndexOfAsync = value; }
+        }
 
         public Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder)
         {
@@ -91,5 +99,15 @@ namespace AlphaChiTech.Virtualization
 
             return tcs.Task;
         }
+
+      public Task<int> IndexOfAsync( T item )
+      {
+        var ret = default( Task<int> );
+
+        if (_FuncIndexOfAsync != null)
+          ret = _FuncIndexOfAsync.Invoke( item );
+
+        return ret;
+      }
     }
 }
