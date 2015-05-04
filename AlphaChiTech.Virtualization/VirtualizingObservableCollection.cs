@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AlphaChiTech.Virtualization
@@ -698,43 +699,79 @@ namespace AlphaChiTech.Virtualization
             }
         }
 
+        CancellationTokenSource _ResetToken = null;
+
         public async void ResetAsync()
         {
-            if(this.Provider != null)
+            CancellationTokenSource cts = null;
+
+            lock(this)
+            {
+                if(_ResetToken != null)
+                {
+                    _ResetToken.Cancel();
+                    _ResetToken = null;
+                }
+
+                cts = _ResetToken = new CancellationTokenSource();
+            }
+
+            if (this.Provider != null)
             {
                 if (this.Provider is IProviderPreReset)
                 {
                     (this.Provider as IProviderPreReset).OnBeforeReset();
+                    if (cts.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    
                 }
-                this.Provider.OnReset(-1);
 
-                Task.Run( async () =>
+                //this.Provider.OnReset(-2);
+
+                Task.Run(async () =>
                     {
                         if (this.Provider is IAsyncResetProvider)
                         {
                             int count = await (this.Provider as IAsyncResetProvider).GetCountAsync();
-                            VirtualizationManager.Instance.RunOnUI(() =>
-                                this.Provider.OnReset(count)
-                            );
+                            if (!cts.IsCancellationRequested)
+                            {
+                                VirtualizationManager.Instance.RunOnUI(() =>
+                                    this.Provider.OnReset(count)
+                                );
+                            }
 
                         }
                         else
                         {
                             int count = this.Provider.GetCount(false);
-                            VirtualizationManager.Instance.RunOnUI(() =>
-                                this.Provider.OnReset(count)
-                            );
+                            if (!cts.IsCancellationRequested)
+                            {
+                                VirtualizationManager.Instance.RunOnUI(() =>
+                                    this.Provider.OnReset(count)
+                                );
+                            }
                         }
+
                     });
-               
-            } 
-            else 
+
+            }
+            else
             {
                 if (this.ProviderAsync is IProviderPreReset)
                 {
                     (this.ProviderAsync as IProviderPreReset).OnBeforeReset();
                 }
                 this.ProviderAsync.OnReset(await this.ProviderAsync.Count);
+            }
+
+            lock(this)
+            {
+                if(_ResetToken == cts)
+                {
+                    _ResetToken = null;
+                }
             }
         }
 

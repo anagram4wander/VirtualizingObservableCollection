@@ -932,7 +932,8 @@ namespace AlphaChiTech.Virtualization
                 this.ProviderAsync.OnReset(count);
             }
 
-            RaiseCountChanged(true, count);
+            if(count >= -1)
+                RaiseCountChanged(true, count);
             
         }
 
