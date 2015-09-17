@@ -184,7 +184,7 @@ namespace AlphaChiTech.Virtualization
         {
             if (IsSafeToUpdate(comparer, updatedAt))
             {
-                _Items[offset] = newValue;
+                if (_Items.Count > offset) _Items[offset] = newValue;
             }
         }
 
