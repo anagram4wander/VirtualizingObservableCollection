@@ -111,9 +111,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\AlphaChiTech.Virtualization\AlphaChiTech.Virtualization.csproj">
-      <Project>{5455ee53-36b9-48e8-b1f0-eb7c6abb7a57}</Project>
-      <Name>AlphaChiTech.Virtualization</Name>
+    <ProjectReference Include="..\AlphaChiTech.Virtualization.Net4\AlphaChiTech.Virtualization.Net4.csproj">
+      <Project>{ecedc613-843a-4d9a-8123-bd9600c9118e}</Project>
+      <Name>AlphaChiTech.Virtualization.Net4</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

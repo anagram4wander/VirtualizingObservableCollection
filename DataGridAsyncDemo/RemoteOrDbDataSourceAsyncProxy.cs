@@ -21,6 +21,8 @@ namespace DataGridAsyncDemo
 
     private readonly RemoteOrDbDataSourceEmulation _remoteDatas;
 
+        private Random _rand = new Random();
+
     #endregion
 
     public RemoteOrDbDataSourceAsyncProxy( RemoteOrDbDataSourceEmulation remoteDatas )
@@ -52,15 +54,23 @@ namespace DataGridAsyncDemo
 
     int IPagedSourceProvider<RemoteOrDbDataItem>.IndexOf( RemoteOrDbDataItem item )
     {
-      throw new NotImplementedException();
-    }
+            return _remoteDatas.FilteredOrderedItems.IndexOf(item);
+        }
+
     public PagedSourceItemsPacket<RemoteOrDbDataItem> GetItemsAt( int pageoffset, int count, bool usePlaceholder )
     {
-      throw new NotImplementedException();
-    }
+            Task.Delay(50 + (int)Math.Round(_rand.NextDouble() * 100)).Wait(); // Just to slow it down !
+            return new PagedSourceItemsPacket<RemoteOrDbDataItem>
+            {
+                LoadedAt = DateTime.Now,
+                Items = (from items in _remoteDatas.FilteredOrderedItems select items).Skip(pageoffset).Take(count)
+            };
+        }
     public int Count
     {
-      get { throw new NotImplementedException(); }
+      get {
+                Task.Delay(20 + (int)Math.Round(_rand.NextDouble() * 30)).Wait(); // Just to slow it down !
+                return _remoteDatas.FilteredOrderedItems.Count; ; }
     }
 
     #endregion
@@ -71,19 +81,20 @@ namespace DataGridAsyncDemo
 
     public Task<int> GetCountAsync()
     {
-      return Task.Run( () =>
+      return Task.Run(() =>
                        {
-                         Task.Delay( 1000 ).Wait(); // Just to slow it down !
+                         Task.Delay(20 + (int)Math.Round(_rand.NextDouble() * 30)).Wait(); // Just to slow it down !
                          return _remoteDatas.FilteredOrderedItems.Count;
                        } );
     }
 
     public Task<PagedSourceItemsPacket<RemoteOrDbDataItem>> GetItemsAtAsync( int pageoffset, int count, bool usePlaceholder )
     {
+            Console.WriteLine("Get");
       return Task.Run( () =>
                        {
-                         Task.Delay( 1000 ).Wait(); // Just to slow it down !
-                         return new PagedSourceItemsPacket<RemoteOrDbDataItem>
+                           Task.Delay(50 + (int)Math.Round(_rand.NextDouble() * 100)).Wait(); // Just to slow it down !
+                           return new PagedSourceItemsPacket<RemoteOrDbDataItem>
                                 {
                                   LoadedAt = DateTime.Now,
                                   Items = ( from items in _remoteDatas.FilteredOrderedItems select items ).Skip( pageoffset ).Take( count )

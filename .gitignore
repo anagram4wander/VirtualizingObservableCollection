@@ -1,5 +1,5 @@
-/AlphaChiTech.Virtualization/bin
-/AlphaChiTech.Virtualization/obj
-/DataGridDemo/bin
-/DataGridDemo/obj
-/packages
+*\bin*
+*\obj*
+*.suo
+packages
+*/obj/*

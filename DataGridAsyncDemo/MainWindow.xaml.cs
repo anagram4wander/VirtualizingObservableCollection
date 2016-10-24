@@ -51,7 +51,7 @@ namespace DataGridAsyncDemo
         //to the dispatcher thread, and using a DispatcherTimer to run the background
         //operations the VirtualizationManager needs to run to reclaim pages and manage memory.
         VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );
-        new DispatcherTimer( TimeSpan.FromSeconds( 1 ),
+        new DispatcherTimer( TimeSpan.FromMilliseconds( 10 ),
                              DispatcherPriority.Background,
                              delegate
                              {
@@ -170,9 +170,9 @@ namespace DataGridAsyncDemo
         if ( _myDataVirtualizedAsyncFilterSortObservableCollection == null )
         {
           _myRemoteOrDbDataSourceAsyncProxy = new RemoteOrDbDataSourceAsyncProxy( new RemoteOrDbDataSourceEmulation() );
-          _myDataVirtualizedAsyncFilterSortObservableCollection =
-            new VirtualizingObservableCollection<RemoteOrDbDataItem>(
-              new PaginationManager<RemoteOrDbDataItem>( _myRemoteOrDbDataSourceAsyncProxy ) );
+                    _myDataVirtualizedAsyncFilterSortObservableCollection =
+                      new VirtualizingObservableCollection<RemoteOrDbDataItem>(
+                        new PaginationManager<RemoteOrDbDataItem>(_myRemoteOrDbDataSourceAsyncProxy, pageSize: 10, maxPages:2) );
         }
         return _myDataVirtualizedAsyncFilterSortObservableCollection;
       }
