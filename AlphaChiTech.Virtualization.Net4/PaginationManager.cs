@@ -50,7 +50,7 @@ namespace AlphaChiTech.Virtualization
                     {
                         _Tasks[page].Cancel();
                     }
-                    catch (Exception e1)
+                    catch (Exception)
                     {
 
                     }
@@ -59,7 +59,7 @@ namespace AlphaChiTech.Virtualization
                     {
                         _Tasks.Remove(page);
                     }
-                    catch (Exception e2)
+                    catch (Exception)
                     {
 
                     }
@@ -78,7 +78,7 @@ namespace AlphaChiTech.Virtualization
                     {
                         t.Cancel(false);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
 
                     }
@@ -98,7 +98,7 @@ namespace AlphaChiTech.Virtualization
                     {
                         _Tasks.Remove(page);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
 
                     }
@@ -256,16 +256,16 @@ namespace AlphaChiTech.Virtualization
         }
 
         // The _LastXXX are used for optimizations..
-        private int _LastIndex = -1;
-        private int _LastPage = -1;
-        private int _LastOffset = -1;
+        //private int _LastIndex = -1;
+        //private int _LastPage = -1;
+        //private int _LastOffset = -1;
 
         /// <summary>
         /// Clears the optimizations.
         /// </summary>
         protected void ClearOptimizations()
         {
-            _LastIndex = -1;
+            //_LastIndex = -1;
         }
 
         /* Old implementation
@@ -752,13 +752,16 @@ namespace AlphaChiTech.Virtualization
         {
 
             var data = this.Provider.GetItemsAt(pageOffset, newPage.ItemsPerPage, false);
-            newPage.WiredDateTime = data.LoadedAt;
-            foreach (var o in data.Items)
+            if (data != null)
             {
-                newPage.Append(o, null, this.ExpiryComparer);
-            }
+                newPage.WiredDateTime = data.LoadedAt;
+                foreach (var o in data.Items)
+                {
+                    newPage.Append(o, null, this.ExpiryComparer);
+                }
 
-            newPage.PageFetchState = PageFetchStateEnum.Fetched;
+                newPage.PageFetchState = PageFetchStateEnum.Fetched;
+            }
         }
 
         /// <summary>
@@ -769,13 +772,15 @@ namespace AlphaChiTech.Virtualization
         void FillPageFromAsyncProvider(ISourcePage<T> newPage, int pageOffset)
         {
             var data = this.ProviderAsync.GetItemsAt(pageOffset, newPage.ItemsPerPage, false);
-            newPage.WiredDateTime = data.LoadedAt;
-            foreach (var o in data.Items)
+            if (data != null)
             {
-                newPage.Append(o, null, this.ExpiryComparer);
+                newPage.WiredDateTime = data.LoadedAt;
+                foreach (var o in data.Items)
+                {
+                    newPage.Append(o, null, this.ExpiryComparer);
+                }
+                newPage.PageFetchState = PageFetchStateEnum.Fetched;
             }
-            newPage.PageFetchState = PageFetchStateEnum.Fetched;
-
         }
 
         /// <summary>
@@ -822,45 +827,47 @@ namespace AlphaChiTech.Virtualization
 
         }
 
-        public async Task<int> GetCountAsync()
+        public Task<int> GetCountAsync()
         {
-            int ret = 0;
-
-
+            Task<int> task;
             if (!IsAsync)
             {
-                ret = this.Provider.Count;
+                task = Task.Factory.Run(() => this.Provider.Count);
+                task.ContinueWith(t => _HasGotCount = true);
             }
             else
             {
-                ret = await this.ProviderAsync.GetCountAsync();
+                task = this.ProviderAsync.GetCountAsync();
+                task.ContinueWith(t => _HasGotCount = true);
             }
-
-            _HasGotCount = true;
-
-            return ret;
+            return task;
         }
 
-        private async void GetCountAsync(CancellationTokenSource cts)
+        private Task GetCountAsync(CancellationTokenSource cts)
         {
             if (!cts.IsCancellationRequested)
             {
-                int ret = await this.ProviderAsync.GetCountAsync();
-
-                if (!cts.IsCancellationRequested)
-                {
-                    lock (this)
+                return this.ProviderAsync.GetCountAsync()
+                    .ContinueWith(t =>
                     {
-                        _HasGotCount = true;
-                        _LocalCount = ret;
-                    }
-                }
+                        if (!cts.IsCancellationRequested)
+                        {
+                            lock (this)
+                            {
+                                _HasGotCount = true;
+                                _LocalCount = t.Result;
+                            }
+                        }
 
-                if (!cts.IsCancellationRequested) 
-                    this.RaiseCountChanged(true, _LocalCount);
+                        if (!cts.IsCancellationRequested)
+                            this.RaiseCountChanged(true, _LocalCount);
+                        RemovePageRequest(Int32.MinValue);
+                    });
             }
-
-            RemovePageRequest(Int32.MinValue);
+            else
+            {
+                return Task.Factory.StartNew(() => { }).ContinueWith(t => RemovePageRequest(Int32.MinValue));
+            }
         }
 
         /// <summary>
@@ -1047,9 +1054,8 @@ namespace AlphaChiTech.Virtualization
 
             lock (_PageLock)
             {
-                if (_Pages.ContainsKey(page))
+                if (_Pages.TryGetValue(page, out ret))
                 {
-                    ret = _Pages[page];
                     _Reclaimer.OnPageTouched(ret);
                 }
                 else
@@ -1060,7 +1066,7 @@ namespace AlphaChiTech.Virtualization
                     int pageSize = Math.Min(this.PageSize, this.GetCount(false)-pageOffset);
                     if (delta != null) pageSize += delta.Delta;
                     var newPage = this._Reclaimer.MakePage(page, pageSize);
-                    _Pages.Add(page, newPage);
+                    _Pages[page] = newPage;
 
                     if (!IsAsync)
                     {
@@ -1098,71 +1104,84 @@ namespace AlphaChiTech.Virtualization
             return ret;
         }
 
-        private async void DoRealPageGet(Object voc, ISourcePage<T> page, int pageOffset, int index, CancellationTokenSource cts)
+        private Task DoRealPageGet(Object voc, ISourcePage<T> page, int pageOffset, int index, CancellationTokenSource cts)
         {
             //Debug.WriteLine("DoRealPageGet: pageOffset=" + pageOffset + " index=" + index);
             VirtualizingObservableCollection<T> realVOC = (VirtualizingObservableCollection<T>)voc;
             List<PlaceholderReplaceWA<T>> listOfReplaces = new List<PlaceholderReplaceWA<T>>();
 
+            Task task = Task.Factory.Run(() => { });
+
             if (realVOC != null)
-            {
-                if (cts.IsCancellationRequested) return;
-
-                var data = await ProviderAsync.GetItemsAtAsync(pageOffset, page.ItemsPerPage, false);
-
-                if (cts.IsCancellationRequested) return;
-
-                page.WiredDateTime = data.LoadedAt;
-
-                int i = 0;
-                foreach (var item in data.Items)
-                {
-                    if (cts.IsCancellationRequested)
-                    {
-                        RemovePageRequest(page.Page);
-                        return;
-                    }
-
-                    ClearOptimizations();
-                    if(page.ReplaceNeeded(i))
-                    {
-                        var old = page.GetAt(i);
-                        if (old == null)
-                        {
-
-                        }
-
-                        ClearOptimizations();
-                        //Debug.WriteLine("Replacing:" + old.ToString() + " with " + item.ToString());
-
-                        page.ReplaceAt(i, old, item, null, null);
-                        //VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset+i));
-                        listOfReplaces.Add(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset + i));
-                    }
-                    else
-                    {
-                        page.ReplaceAt(i, default(T), item, null, null);
-                    }
-
-                    i++;
-                }
-
-            }
-
-            page.PageFetchState = PageFetchStateEnum.Fetched;
-
-            ClearOptimizations();
-            foreach (var replace in listOfReplaces)
             {
                 if (cts.IsCancellationRequested)
                 {
-                    RemovePageRequest(page.Page);
-                    return;
+                    task.ContinueWith(t =>
+                    {
+                        page.PageFetchState = PageFetchStateEnum.Fetched;
+                        ClearOptimizations();
+                        RemovePageRequest(page.Page);
+                    });
                 }
-                VirtualizationManager.Instance.RunOnUI(replace);
-            }
+                else
+                {
+                    task = ProviderAsync.GetItemsAtAsync(pageOffset, page.ItemsPerPage, false).ContinueWith(t =>
+                    {
+                        var data = t.Result;
 
-            RemovePageRequest(page.Page);
+                        if (cts.IsCancellationRequested || data == null) return;
+
+                        page.WiredDateTime = data.LoadedAt;
+
+                        int i = 0;
+                        foreach (var item in data.Items)
+                        {
+                            if (cts.IsCancellationRequested)
+                            {
+                                RemovePageRequest(page.Page);
+                                return;
+                            }
+
+                            ClearOptimizations();
+                            if (page.ReplaceNeeded(i))
+                            {
+                                var old = page.GetAt(i);
+                                if (old == null)
+                                {
+
+                                }
+
+                                ClearOptimizations();
+
+                                page.ReplaceAt(i, old, item, null, null);
+                                //VirtualizationManager.Instance.RunOnUI(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset+i));
+                                listOfReplaces.Add(new PlaceholderReplaceWA<T>(realVOC, old, item, pageOffset + i));
+                            }
+                            else
+                            {
+                                page.ReplaceAt(i, default(T), item, null, null);
+                            }
+
+                            i++;
+                        }
+                        page.PageFetchState = PageFetchStateEnum.Fetched;
+
+                        ClearOptimizations();
+                        foreach (var replace in listOfReplaces)
+                        {
+                            if (cts.IsCancellationRequested)
+                            {
+                                RemovePageRequest(page.Page);
+                                return;
+                            }
+                            VirtualizationManager.Instance.RunOnUI(replace);
+                        }
+
+                        RemovePageRequest(page.Page);
+                    });
+                }                
+            }
+            return task;
         }
 
         protected bool IsPageWired(int page)
@@ -1207,7 +1226,7 @@ namespace AlphaChiTech.Virtualization
                         else
                         {
                             newdataPage = this._Reclaimer.MakePage(page - 1, this.PageSize);
-                            _Pages.Add(page - 1, newdataPage);
+                            _Pages[page - 1] = newdataPage;
                         }
 
                         for (int loop = 0; loop < this.PageSize; loop++)

@@ -7,10 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace AlphaChiTech.Virtualization
 {
-    public class VirtualizingObservableCollection<T> : IEnumerable, IEnumerable<T>, ICollection, ICollection<T>, IList, IList<T>, INotifyCollectionChanged, INotifyPropertyChanged
+    public class VirtualizingObservableCollection<T> : IEnumerable<T>, ICollection<T>, IList<T>, IEnumerable,  ICollection,  IList, INotifyCollectionChanged, INotifyPropertyChanged
     {
         #region Ctors Etc
 
@@ -509,24 +511,27 @@ namespace AlphaChiTech.Virtualization
         /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs"/> instance containing the event data.</param>
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
-            if (_BulkCount > 0) return;
-
-            var evnt = CollectionChanged;
-
-            if (evnt != null)
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
-                try
+                if (_BulkCount > 0) return;
+
+                var evnt = CollectionChanged;
+
+                if (evnt != null)
                 {
-                    evnt(this, args);
-                }
-                catch (Exception ex)
-                {
-                    if (!this.SupressEventErrors)
+                    try
                     {
-                        throw ex;
+                        evnt(this, args);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!this.SupressEventErrors)
+                        {
+                            throw ex;
+                        }
                     }
                 }
-            }
+            }));
         }
 
         #endregion INotifyCollectionChanged Implementation
@@ -701,7 +706,7 @@ namespace AlphaChiTech.Virtualization
 
         CancellationTokenSource _ResetToken = null;
 
-        public async void ResetAsync()
+        public Task ResetAsync()
         {
             CancellationTokenSource cts = null;
 
@@ -723,25 +728,29 @@ namespace AlphaChiTech.Virtualization
                     (this.Provider as IProviderPreReset).OnBeforeReset();
                     if (cts.IsCancellationRequested)
                     {
-                        return;
+                        return Task.Factory.Run(() => { });
                     }
                     
                 }
 
                 //this.Provider.OnReset(-2);
 
-                Task.Factory.Run(async () =>
+                return Task.Factory.Run(() =>
                     {
                         if (this.Provider is IAsyncResetProvider)
                         {
-                            int count = await (this.Provider as IAsyncResetProvider).GetCountAsync();
-                            if (!cts.IsCancellationRequested)
+                            (this.Provider as IAsyncResetProvider).GetCountAsync()
+                            .ContinueWith(t =>
                             {
-                                VirtualizationManager.Instance.RunOnUI(() =>
-                                    this.Provider.OnReset(count)
-                                );
-                            }
+                                int count = t.Result;
 
+                                if (!cts.IsCancellationRequested)
+                                {
+                                    VirtualizationManager.Instance.RunOnUI(() =>
+                                        this.Provider.OnReset(count)
+                                    );
+                                }
+                            });
                         }
                         else
                         {
@@ -763,7 +772,12 @@ namespace AlphaChiTech.Virtualization
                 {
                     (this.ProviderAsync as IProviderPreReset).OnBeforeReset();
                 }
-                this.ProviderAsync.OnReset(await this.ProviderAsync.Count);
+
+                this.ProviderAsync.Count.ContinueWith(t =>
+                {
+                    var count = t.Result;
+                    this.ProviderAsync.OnReset(count);
+                });
             }
 
             lock(this)
@@ -773,6 +787,8 @@ namespace AlphaChiTech.Virtualization
                     _ResetToken = null;
                 }
             }
+
+            return Task.Factory.Run(() => { });
         }
 
         T InternalGetValue(int index, string selectionContext)

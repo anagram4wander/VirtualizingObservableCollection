@@ -128,8 +128,6 @@ namespace AlphaChiTech.Virtualization
 
         public PagedSourceItemsPacket<T> GetItemsAt(int pageoffset, int count, bool usePlaceholder)
         {
-            PagedSourceItemsPacket<T> ret = null;
-
             return Task.Factory.Run(() => GetItemsAtAsync(pageoffset, count, usePlaceholder)).Result;
                 
         }
@@ -159,11 +157,11 @@ namespace AlphaChiTech.Virtualization
             return ret;
         }
 
-        public virtual async Task<int> IndexOfAsync(T item)
+        public virtual Task<int> IndexOfAsync(T item)
         {
             int ret = -1;
 
-            return ret;
+            return Task.Factory.Run(() => ret);
         }
 
         public virtual void OnReset(int count)
