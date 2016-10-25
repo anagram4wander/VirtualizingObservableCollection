@@ -7,8 +7,8 @@ namespace AlphaChiTech.Virtualization
 {
     public class ReclaimPagesWA : BaseRepeatableActionVirtualization
     {
-        public ReclaimPagesWA(IReclaimableService provider, string sectionContext)
-            : base(VirtualActionThreadModelEnum.Background, true, TimeSpan.FromMinutes(1))
+        public ReclaimPagesWA(IReclaimableService provider, string sectionContext, TimeSpan? delayBetweenReclaims)
+            : base(VirtualActionThreadModelEnum.Background, true, delayBetweenReclaims ?? TimeSpan.FromMinutes(1))
         {
             _WRProvider = new WeakReference(provider);
         }

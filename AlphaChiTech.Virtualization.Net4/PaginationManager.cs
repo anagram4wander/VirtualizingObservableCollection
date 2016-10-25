@@ -146,8 +146,8 @@ namespace AlphaChiTech.Virtualization
             int maxPages = 100,
             int maxDeltas = -1,
             int maxDistance = -1,
-            string sectionContext = ""
-            )
+            string sectionContext = "",
+            TimeSpan? delayBetweenReclaims = null)
         {
             this.PageSize = pageSize;
             this.MaxPages = maxPages;
@@ -174,7 +174,7 @@ namespace AlphaChiTech.Virtualization
 
             this.ExpiryComparer = expiryComparer;
 
-            VirtualizationManager.Instance.AddAction(new ReclaimPagesWA(this, sectionContext));
+            VirtualizationManager.Instance.AddAction(new ReclaimPagesWA(this, sectionContext, delayBetweenReclaims));
         }
 
 

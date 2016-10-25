@@ -511,7 +511,7 @@ namespace AlphaChiTech.Virtualization
         /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs"/> instance containing the event data.</param>
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
-            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            Application.Current.Dispatcher.Invoke(new Action(() =>
             {
                 if (_BulkCount > 0) return;
 
