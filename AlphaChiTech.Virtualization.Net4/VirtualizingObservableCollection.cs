@@ -511,27 +511,24 @@ namespace AlphaChiTech.Virtualization
         /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs"/> instance containing the event data.</param>
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
-            Application.Current.Dispatcher.Invoke(new Action(() =>
+            if (_BulkCount > 0) return;
+
+            var evnt = CollectionChanged;
+
+            if (evnt != null)
             {
-                if (_BulkCount > 0) return;
-
-                var evnt = CollectionChanged;
-
-                if (evnt != null)
+                try
                 {
-                    try
+                    evnt(this, args);
+                }
+                catch (Exception ex)
+                {
+                    if (!this.SupressEventErrors)
                     {
-                        evnt(this, args);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (!this.SupressEventErrors)
-                        {
-                            throw ex;
-                        }
+                        throw ex;
                     }
                 }
-            }));
+            }
         }
 
         #endregion INotifyCollectionChanged Implementation
@@ -777,7 +774,7 @@ namespace AlphaChiTech.Virtualization
                 {
                     var count = t.Result;
                     this.ProviderAsync.OnReset(count);
-                });
+                }, TaskScheduler.FromCurrentSynchronizationContext());
             }
 
             lock(this)

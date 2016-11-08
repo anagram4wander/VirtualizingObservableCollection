@@ -862,7 +862,7 @@ namespace AlphaChiTech.Virtualization
                         if (!cts.IsCancellationRequested)
                             this.RaiseCountChanged(true, _LocalCount);
                         RemovePageRequest(Int32.MinValue);
-                    });
+                    }, TaskScheduler.FromCurrentSynchronizationContext());
             }
             else
             {
