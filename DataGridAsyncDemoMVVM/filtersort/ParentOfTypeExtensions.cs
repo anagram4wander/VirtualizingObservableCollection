@@ -18,8 +18,7 @@ namespace DataGridAsyncDemoMVVM.filtersort
         public static void TestNotEmptyString(this string parameter, string parameterName)
         {
             if (string.IsNullOrEmpty(parameter))
-                throw new ArgumentException(
-                    string.Format("The parameter '{0}' should not be empty string.", parameterName), parameterName);
+                throw new ArgumentException($@"The parameter '{parameterName}' should not be empty string.", parameterName);
         }
     }
 
@@ -33,10 +32,7 @@ namespace DataGridAsyncDemoMVVM.filtersort
         /// </summary>
         public static T ParentOfType<T>(this DependencyObject element) where T : DependencyObject
         {
-            if (element == null)
-                return null;
-
-            return element.GetParents().OfType<T>().FirstOrDefault();
+            return element?.GetParents().OfType<T>().FirstOrDefault();
         }
 
 
@@ -49,7 +45,7 @@ namespace DataGridAsyncDemoMVVM.filtersort
             element.TestNotNull("element");
             descendant.TestNotNull("descendant");
 
-            return descendant == element || descendant.GetParents().Contains(element);
+            return Equals(descendant, element) || descendant.GetParents().Contains(element);
         }
 
         /// <summary>
@@ -91,7 +87,7 @@ namespace DataGridAsyncDemoMVVM.filtersort
         public static IEnumerable<DependencyObject> GetParents(this DependencyObject element)
         {
             if (element == null)
-                throw new ArgumentNullException("element");
+                throw new ArgumentNullException(nameof(element));
 
             while ((element = element.GetParent()) != null)
                 yield return element;
@@ -102,8 +98,7 @@ namespace DataGridAsyncDemoMVVM.filtersort
             var parent = VisualTreeHelper.GetParent(element);
             if (parent == null)
             {
-                var frameworkElement = element as FrameworkElement;
-                if (frameworkElement != null)
+                if (element is FrameworkElement frameworkElement)
                     parent = frameworkElement.Parent;
             }
             return parent;

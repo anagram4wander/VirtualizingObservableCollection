@@ -1,11 +1,17 @@
 ﻿<Window x:Class="DataGridAsyncDemoMVVM.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:cmd="clr-namespace:GalaSoft.MvvmLight.Command;assembly=GalaSoft.MvvmLight.Platform"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+        xmlns:dataGridAsyncDemoMvvm="clr-namespace:DataGridAsyncDemoMVVM"
+        xmlns:converters="clr-namespace:DataGridAsyncDemoMVVM.converters"
         Title="TheMainWindow"
         Width="525"
         Height="350"
-        DataContext="{StaticResource MainViewModel}"
-        >
+        DataContext="{StaticResource MainViewModel}">
+    <Window.Resources>
+        <converters:TextChangedEventArgsToDatagridHeaderAndText x:Key="TextChangedEventArgsToDatagridHeaderAndText" />
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -15,7 +21,7 @@
         <DataGrid x:Name="TstDataGridAsyncFilterSort"
                   Grid.Row="1"
                   CanUserSortColumns="True"
-                  ItemsSource="{Binding MyDataVirtualizedAsyncFilterSortObservableCollection}">
+                  ItemsSource="{Binding MyDataVirtualizedAsyncFilterSortObservableCollectionCollectionView}">
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
@@ -38,7 +44,18 @@
                                              VerticalContentAlignment="Stretch"
                                              Background="GhostWhite"
                                              BorderThickness="0"
-                                             Padding="0" />
+                                             Padding="0">
+                                        <i:Interaction.Triggers>
+                                            <i:EventTrigger EventName="TextChanged">
+                                                <cmd:EventToCommand
+                                                    Command="{Binding Mode=OneWay, 
+                                                    Path=DataContext.FilterCommand, 
+                                                    RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" 
+                                                    EventArgsConverter="{StaticResource TextChangedEventArgsToDatagridHeaderAndText}"  
+                                                    PassEventArgsToCommand="True" />
+                                            </i:EventTrigger>
+                                        </i:Interaction.Triggers>
+                                    </TextBox>
                                 </Grid>
                             </DataTemplate>
                         </Setter.Value>
