@@ -1,0 +1,11 @@
+﻿<Application x:Class="DataGridAsyncDemoMVVM.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:DataGridAsyncDemoMVVM"
+             xmlns:system="clr-namespace:System;assembly=mscorlib"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+
+        <local:MainViewModel x:Key="MainViewModel" />
+    </Application.Resources>
+</Application>
