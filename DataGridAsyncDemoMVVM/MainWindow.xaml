@@ -10,7 +10,9 @@
         Height="350"
         DataContext="{StaticResource MainViewModel}">
     <Window.Resources>
-        <converters:TextChangedEventArgsToDatagridHeaderAndText x:Key="TextChangedEventArgsToDatagridHeaderAndText" />
+        <converters:TextChangedEventArgsToMemberPathAndText x:Key="TextChangedEventArgsToMemberPathAndText" />
+        <converters:DataGridSortingEventArgsToMemberPathSortDirection
+            x:Key="DataGridSortingEventArgsToMemberPathSortDirection" />
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -22,7 +24,14 @@
                   Grid.Row="1"
                   CanUserSortColumns="True"
                   ItemsSource="{Binding MyDataVirtualizedAsyncFilterSortObservableCollectionCollectionView}">
-
+            <i:Interaction.Triggers>
+                <i:EventTrigger EventName="Sorting">
+                    <cmd:EventToCommand
+                        Command="{Binding Mode=OneWay, Path=SortCommand}"
+                        EventArgsConverter="{StaticResource DataGridSortingEventArgsToMemberPathSortDirection}"
+                        PassEventArgsToCommand="True" />
+                </i:EventTrigger>
+            </i:Interaction.Triggers>
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -50,8 +59,8 @@
                                                 <cmd:EventToCommand
                                                     Command="{Binding Mode=OneWay, 
                                                     Path=DataContext.FilterCommand, 
-                                                    RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}" 
-                                                    EventArgsConverter="{StaticResource TextChangedEventArgsToDatagridHeaderAndText}"  
+                                                    RelativeSource={RelativeSource AncestorType={x:Type DataGrid}}}"
+                                                    EventArgsConverter="{StaticResource TextChangedEventArgsToMemberPathAndText}"
                                                     PassEventArgsToCommand="True" />
                                             </i:EventTrigger>
                                         </i:Interaction.Triggers>

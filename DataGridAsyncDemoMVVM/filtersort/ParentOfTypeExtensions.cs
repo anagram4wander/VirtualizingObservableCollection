@@ -18,7 +18,8 @@ namespace DataGridAsyncDemoMVVM.filtersort
         public static void TestNotEmptyString(this string parameter, string parameterName)
         {
             if (string.IsNullOrEmpty(parameter))
-                throw new ArgumentException($@"The parameter '{parameterName}' should not be empty string.", parameterName);
+                throw new ArgumentException($@"The parameter '{parameterName}' should not be empty string.",
+                    parameterName);
         }
     }
 
@@ -97,10 +98,8 @@ namespace DataGridAsyncDemoMVVM.filtersort
         {
             var parent = VisualTreeHelper.GetParent(element);
             if (parent == null)
-            {
                 if (element is FrameworkElement frameworkElement)
                     parent = frameworkElement.Parent;
-            }
             return parent;
         }
     }

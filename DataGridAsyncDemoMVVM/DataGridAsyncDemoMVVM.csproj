@@ -72,6 +72,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="converters\DataGridSortingEventArgsToMemberPathSortDirection.cs" />
+    <Compile Include="filtersort\MemberPathSortingDirection.cs" />
     <Compile Include="filtersort\MemberPathFilterText.cs" />
     <Compile Include="filtersort\DescriptionList.cs" />
     <Compile Include="filtersort\FilterDescription.cs" />
@@ -85,7 +87,7 @@
     <Compile Include="RemoteOrDbDataItem.cs" />
     <Compile Include="RemoteOrDbDataSourceAsyncProxy.cs" />
     <Compile Include="RemoteOrDbDataSourceEmulation.cs" />
-    <Compile Include="converters\TextChangedEventArgsToDatagridHeaderAndText.cs" />
+    <Compile Include="converters\TextChangedEventArgsToMemberPathAndText.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
