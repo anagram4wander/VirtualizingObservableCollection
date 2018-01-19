@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Pageing
+namespace AlphaChiTech.Virtualization.Pageing
 {
     /// <summary>
     /// PageReclainOnTouched is a Page Reclaimer implementation that releases pages based on when
@@ -22,7 +22,7 @@ namespace AlphaChiTech.VirtualizingCollection.Pageing
         /// <returns></returns>
         public IEnumerable<ISourcePage<T>> ReclaimPages(IEnumerable<ISourcePage<T>> pages, int pagesNeeded, string sectionContext)
         {
-            List<ISourcePage<T>> ret = new List<ISourcePage<T>>();
+            var ret = new List<ISourcePage<T>>();
 
             var candiadates = (from p in pages where p.CanReclaimPage == true orderby p.LastTouch select p).Take(pagesNeeded);
 

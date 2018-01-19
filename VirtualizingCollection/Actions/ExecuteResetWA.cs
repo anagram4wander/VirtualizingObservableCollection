@@ -1,23 +1,24 @@
 ﻿using System;
 using System.Collections.Specialized;
+using AlphaChiTech.Virtualization;
 
-namespace AlphaChiTech.VirtualizingCollection.Actions
+namespace AlphaChiTech.Virtualization.Actions
 {
-    public class ExecuteResetWA<T> : BaseActionVirtualization
+    public class ExecuteResetWA<T> : BaseActionVirtualization where T : class
     {
-        WeakReference _VOC;
+        readonly WeakReference _voc;
 
         public ExecuteResetWA(VirtualizingObservableCollection<T> voc)
             : base(VirtualActionThreadModelEnum.UseUIThread)
         {
-            this._VOC = new WeakReference(voc);
+            this._voc = new WeakReference(voc);
         }
 
         public override void DoAction()
         {
-            var voc = (VirtualizingObservableCollection<T>)this._VOC.Target;
+            var voc = (VirtualizingObservableCollection<T>)this._voc.Target;
 
-            if (voc != null && this._VOC.IsAlive)
+            if (voc != null && this._voc.IsAlive)
             {
                 voc.RaiseCollectionChangedEvent(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }

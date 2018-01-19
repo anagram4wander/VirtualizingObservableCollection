@@ -1,7 +1,7 @@
 ﻿using System;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Actions
+namespace AlphaChiTech.Virtualization.Actions
 {
     /// <summary>
     /// Base class there the Action repeats on a periodic basis (the RepeatingSchedule) like BaseActionVirtualization
@@ -9,8 +9,7 @@ namespace AlphaChiTech.VirtualizingCollection.Actions
     /// </summary>
     public abstract class BaseRepeatableActionVirtualization : BaseActionVirtualization, IRepeatingVirtualizationAction
     {
-        protected DateTime _LastRun = DateTime.MinValue;
-        private TimeSpan _RepeatingSchedule = TimeSpan.FromSeconds(1);
+        protected DateTime LastRun = DateTime.MinValue;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseRepeatableActionVirtualization"/> class.
@@ -35,13 +34,7 @@ namespace AlphaChiTech.VirtualizingCollection.Actions
         /// <value>
         /// The repeating schedule.
         /// </value>
-        public TimeSpan RepeatingSchedule
-        {
-            get { return this._RepeatingSchedule; }
-            set { this._RepeatingSchedule = value; }
-        }
-
-        private bool _IsRepeating = false;
+        public TimeSpan RepeatingSchedule { get; set; } = TimeSpan.FromSeconds(1);
 
         /// <summary>
         /// Gets or sets a value indicating whether [is repeating].
@@ -49,11 +42,7 @@ namespace AlphaChiTech.VirtualizingCollection.Actions
         /// <value>
         ///   <c>true</c> if [is repeating]; otherwise, <c>false</c>.
         /// </value>
-        protected bool IsRepeating
-        {
-            get { return this._IsRepeating; }
-            set { this._IsRepeating = value; }
-        }
+        protected bool IsRepeating { get; set; } = false;
 
         /// <summary>
         /// check to see if the action should be kept.
@@ -71,7 +60,7 @@ namespace AlphaChiTech.VirtualizingCollection.Actions
         public virtual bool IsDueToRun()
         {
 
-            if (DateTime.Now >= this._LastRun.Add(this.RepeatingSchedule))
+            if (DateTime.Now >= this.LastRun.Add(this.RepeatingSchedule))
             {
                 return true;
             }

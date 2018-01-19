@@ -1,29 +1,20 @@
 ﻿using System;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Pageing
+namespace AlphaChiTech.Virtualization.Pageing
 {
     /// <summary>
     /// An implementation of a IPageExiryComparer that uses DateTime to see if the update should be applied
     /// </summary>
     public class DateBasedPageExpiryComparer : IPageExpiryComparer
     {
-
-        private static DateBasedPageExpiryComparer _Instance = new DateBasedPageExpiryComparer();
-
         /// <summary>
         /// Gets the default instance.
         /// </summary>
         /// <value>
         /// The default instance.
         /// </value>
-        public static DateBasedPageExpiryComparer DefaultInstance
-        {
-            get
-            {
-                return _Instance;
-            }
-        }
+        public static DateBasedPageExpiryComparer DefaultInstance { get; } = new DateBasedPageExpiryComparer();
 
         /// <summary>
         /// Determines whether [is update valid] [the specified page based on the updateAt].
@@ -33,7 +24,7 @@ namespace AlphaChiTech.VirtualizingCollection.Pageing
         /// <returns></returns>
         public bool IsUpdateValid(object pageUpdateAt, object updateAt)
         {
-            bool isStillValid = true;
+            var isStillValid = true;
 
             if (pageUpdateAt != null && updateAt != null && pageUpdateAt is DateTime && updateAt is DateTime)
             {

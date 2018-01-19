@@ -1,4 +1,4 @@
-﻿using AlphaChiTech.VirtualizingCollection.Actions;
+﻿using AlphaChiTech.Virtualization.Actions;
 
 namespace AlphaChiTech.VirtualizingCollection.Interfaces
 {

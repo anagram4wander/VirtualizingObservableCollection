@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AlphaChiTech.VirtualizingCollection.Actions;
+using AlphaChiTech.Virtualization.Actions;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
 namespace AlphaChiTech.VirtualizingCollection

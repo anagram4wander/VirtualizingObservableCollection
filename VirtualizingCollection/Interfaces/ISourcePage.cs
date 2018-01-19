@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using AlphaChiTech.VirtualizingCollection.Pageing;
+using AlphaChiTech.Virtualization.Pageing;
 
 namespace AlphaChiTech.VirtualizingCollection.Interfaces
 {
@@ -30,9 +30,7 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
         void InsertAt(int offset, T item, object updatedAt, IPageExpiryComparer comparer);
 
         bool RemoveAt(int offset, object updatedAt, IPageExpiryComparer comparer);
-
-        void ReplaceAt(int offset, T oldItem, T newItem, object updatedAt, IPageExpiryComparer comparer);
-
+        
         PageFetchStateEnum PageFetchState { get; set; }
 
         Object WiredDateTime { get; set; }
@@ -42,5 +40,9 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
         List<SourcePagePendingUpdates> PendingUpdates { get; }
 
         int ItemsCount { get; }
+        
+        T ReplaceAt(int offset, T newValue, object updatedAt, IPageExpiryComparer comparer);
+        
+        T ReplaceAt(T oldValue, T newValue, object updatedAt, IPageExpiryComparer comparer);
     }
 }

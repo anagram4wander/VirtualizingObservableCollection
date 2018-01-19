@@ -1,39 +1,138 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
+using AlphaChiTech.Virtualization.Pageing;
+using AlphaChiTech.VirtualizingCollection;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
-using AlphaChiTech.VirtualizingCollection.Pageing;
 
-namespace AlphaChiTech.VirtualizingCollection
+namespace AlphaChiTech.Virtualization
 {
-    public class VirtualizingObservableCollection<T> : IEnumerable, IEnumerable<T>, ICollection, ICollection<T>, IList, IList<T>, INotifyCollectionChanged, INotifyPropertyChanged
+    public class VirtualizingObservableCollection<T> : IEnumerable, IEnumerable<T>, ICollection, ICollection<T>, IList, IList<T>,IObservableCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged where T : class
     {
-        #region Ctors Etc
+        //#region IEnumerable Implementation
+        ///// <summary>
+        /////     Returns an enumerator that iterates through a collection.
+        ///// </summary>
+        ///// <returns>
+        /////     An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
+        ///// </returns>
+        //IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+        //#endregion IEnumerable Implementation
 
+        //#region IEnumerable<T> Implementation
+        ///// <summary>
+        /////     Returns an enumerator that iterates through the collection.
+        ///// </summary>
+        ///// <returns>
+        /////     A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.
+        ///// </returns>
+        //public IEnumerator<T> GetEnumerator()
+        //{
+        //    var sc = new Guid().ToString();
+
+        //    this.EnsureCountIsGotNonaSync();
+
+        //    var count = this.InternalGetCount();
+
+        //    for(var iLoop = 0; iLoop < count; iLoop++) { yield return this.InternalGetValue(iLoop, sc); }
+        //}
+        //#endregion IEnumerable<T> Implementation
+        //TODO Check enumerator implementation with the commeted out one
+        IEnumerator IEnumerable.GetEnumerator() { return this.GetEnumerator(); }
+        public IEnumerator<T> GetEnumerator() => new Enumerator<T>(this);
+
+        public class Enumerator<TT>:IEnumerator<TT> where TT : class
+        {
+            public VirtualizingObservableCollection<TT> BaseCollection { get;  }
+            private int iLoop = 0;
+            /// <summary>
+            /// Initializes a new instance of the <see cref="T:System.Object"/> class.
+            /// </summary>
+            public Enumerator(VirtualizingObservableCollection<TT> baseCollection) { this.BaseCollection = baseCollection; }
+
+            #region Implementation of IDisposable
+            public void Dispose() { }
+            #endregion
+
+            #region Implementation of IEnumerator
+            public bool MoveNext()
+            {
+                var sc = new Guid().ToString();
+
+                this.BaseCollection.EnsureCountIsGotNonaSync();
+
+                //lock(this.BaseCollection.SyncRoot) {
+                //    var count = this.BaseCollection.InternalGetCount();
+                //    if(this.iLoop < count)
+                //    {
+                //        this.Current = this.BaseCollection.InternalGetValue(this.iLoop++, sc);
+                //        return true;
+                //    }
+                //    return false;
+                //}
+
+                try
+                {
+                    var count = this.BaseCollection.InternalGetCount();
+                    if(this.iLoop < count)
+                    {
+                        this.Current = this.BaseCollection.InternalGetValue(this.iLoop++, sc);
+                        if(this.Current == null) Debugger.Break();
+                        return true;
+                    }
+                    return false;
+                }
+                catch(Exception) {
+                    return false;
+                }
+            }
+
+            public void Reset() {
+                this.iLoop = 0;
+                this.Current = null;
+            }
+
+            /// <summary>
+            /// Gets the element in the collection at the current position of the enumerator.
+            /// </summary>
+            /// <returns>
+            /// The element in the collection at the current position of the enumerator.
+            /// </returns>
+            public TT Current { get; private set; }
+
+            object IEnumerator.Current => this.Current;
+            #endregion
+        }
+
+
+        #region Ctors Etc
         /// <summary>
-        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}"/> class.
+        ///     Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}" /> class.
         /// </summary>
         /// <param name="provider">The provider.</param>
-        public VirtualizingObservableCollection(IItemSourceProvider<T> provider)
+        public VirtualizingObservableCollection(IItemSourceProvider<T> provider) : this()
         {
             this.Provider = provider;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}"/> class.
+        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}" /> class.
         /// </summary>
         /// <param name="asyncProvider">The asynchronous provider.</param>
-        public VirtualizingObservableCollection(IItemSourceProviderAsync<T> asyncProvider)
+        public VirtualizingObservableCollection(IItemSourceProviderAsync<T> asyncProvider) : this()
         {
             this.ProviderAsync = asyncProvider;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}"/> class.
+        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}" /> class.
         /// </summary>
         /// <param name="provider">The provider.</param>
         /// <param name="reclaimer">The optional reclaimer.</param>
@@ -49,105 +148,76 @@ namespace AlphaChiTech.VirtualizingCollection
             int pageSize = 100,
             int maxPages = 100,
             int maxDeltas = -1,
-            int maxDistance = -1
-            )
+            int maxDistance = -1) : this()
         {
             this.Provider = new PaginationManager<T>(provider, reclaimer, expiryComparer, pageSize, maxPages, maxDeltas, maxDistance);
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}" /> class.
+        /// </summary>
+        /// <param name="provider">The provider.</param>
+        /// <param name="reclaimer">The optional reclaimer.</param>
+        /// <param name="expiryComparer">The optional expiry comparer.</param>
+        /// <param name="pageSize">Size of the page.</param>
+        /// <param name="maxPages">The maximum pages.</param>
+        /// <param name="maxDeltas">The maximum deltas.</param>
+        /// <param name="maxDistance">The maximum distance.</param>
+        public VirtualizingObservableCollection(
+            IPagedSourceObservableProvider<T> provider,
+            IPageReclaimer<T> reclaimer = null,
+            IPageExpiryComparer expiryComparer = null,
+            int pageSize = 100,
+            int maxPages = 100,
+            int maxDeltas = -1,
+            int maxDistance = -1) : this()
+        {
+            this.Provider = new PaginationManager<T>(provider, reclaimer, expiryComparer, pageSize, maxPages, maxDeltas, maxDistance);
+            (this.Provider as PaginationManager<T>).CollectionChanged += this.VirtualizingObservableCollection_CollectionChanged;
+            this.IsSourceObservable = true;
+        }
 
+        public bool IsSourceObservable { get; set; }
+
+
+        protected VirtualizingObservableCollection()
+        {
+            //To enable reset in case that noone set UiThreadExcecuteAction
+            if (VirtualizationManager.Instance.UIThreadExcecuteAction == null)
+                VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.CurrentDispatcher.Invoke(a);
+        }
         #endregion Ctors Etc
-
-        #region IEnumerable Implementation
-
-        /// <summary>
-        /// Returns an enumerator that iterates through a collection.
-        /// </summary>
-        /// <returns>
-        /// An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
-        /// </returns>
-        public IEnumerator GetEnumerator()
-        {
-            string sc = new Guid().ToString();
-
-            this.EnsureCountIsGotNONASync();
-
-            int count = this.InternalGetCount();
-
-            for (int iLoop = 0; iLoop < count; iLoop++)
-            {
-                yield return this.InternalGetValue(iLoop, sc);
-            }
-        }
-
-        #endregion IEnumerable Implementation
-
-        #region IEnumerable<T> Implementation
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.
-        /// </returns>
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
-        {
-            string sc = new Guid().ToString();
-
-            this.EnsureCountIsGotNONASync();
-
-            int count = this.InternalGetCount();
-
-            for (int iLoop = 0; iLoop < count; iLoop++)
-            {
-                yield return this.InternalGetValue(iLoop, sc);
-            }
-        }
-
-        #endregion IEnumerable<T> Implementation
+        
 
         #region ICollection Implementation
-
-        public void CopyTo(Array array, int index)
-        {
-            throw new NotImplementedException();
-        }
+        public void CopyTo(Array array, int index) { throw new NotImplementedException(); }
 
         /// <summary>
-        /// Gets the number of elements contained in the <see cref="T:System.Collections.ICollection" />.
+        ///     Gets the number of elements contained in the <see cref="T:System.Collections.ICollection" />.
         /// </summary>
         /// <returns>The number of elements contained in the <see cref="T:System.Collections.ICollection" />.</returns>
-        public int Count
-        {
-            get { return this.InternalGetCount(); }
-        }
+        public int Count => this.InternalGetCount();
 
         /// <summary>
-        /// Gets a value indicating whether access to the <see cref="T:System.Collections.ICollection" /> is synchronized (thread safe).
+        ///     Gets a value indicating whether access to the <see cref="T:System.Collections.ICollection" /> is synchronized
+        ///     (thread safe).
         /// </summary>
-        /// <returns>true if access to the <see cref="T:System.Collections.ICollection" /> is synchronized (thread safe); otherwise, false.</returns>
-        public bool IsSynchronized
-        {
-            get { return false; }
-        }
-
-        private object _SyncRoot = new object();
+        /// <returns>
+        ///     true if access to the <see cref="T:System.Collections.ICollection" /> is synchronized (thread safe);
+        ///     otherwise, false.
+        /// </returns>
+        public bool IsSynchronized => false;
 
         /// <summary>
-        /// Gets an object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.
+        ///     Gets an object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.
         /// </summary>
         /// <returns>An object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.</returns>
-        public object SyncRoot
-        {
-            get { return this._SyncRoot; }
-        }
-
+        public object SyncRoot { get; } = new object();
         #endregion ICollection Implementation
 
         #region ICollection<T> Implementation
-
         /// <summary>
-        /// Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.
+        ///     Adds an item to the <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </summary>
         /// <param name="item">The object to add to the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
         public void Add(T item)
@@ -156,7 +226,8 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Resets the collection - aka forces a get all data, including the count <see cref="T:System.Collections.Generic.ICollection`1" />.
+        ///     Resets the collection - aka forces a get all data, including the count
+        ///     <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </summary>
         public void Clear()
         {
@@ -164,60 +235,60 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.
+        ///     Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.
         /// </summary>
         /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
         /// <returns>
-        /// true if <paramref name="item" /> is found in the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false.
+        ///     true if <paramref name="item" /> is found in the <see cref="T:System.Collections.Generic.ICollection`1" />;
+        ///     otherwise, false.
         /// </returns>
         public bool Contains(T item)
         {
-            return this.IndexOf(item) != -1 ? true : false;
+            return this.Provider.Contains(item);
         }
 
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            throw new NotImplementedException();
+        public void CopyTo(T[] array, int arrayIndex) {
+            foreach(var item in this) { array[arrayIndex++] = item; }
         }
 
         /// <summary>
-        /// Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.
+        ///     Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.
         /// </summary>
         /// <returns>true if the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only; otherwise, false.</returns>
-        public bool IsReadOnly
-        {
-            get { return false; }
-        }
+        public bool IsReadOnly => false;
 
         /// <summary>
-        /// Removes the first occurrence of a specific object from the <see cref="T:System.Collections.Generic.ICollection`1" />.
+        ///     Removes the first occurrence of a specific object from the
+        ///     <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </summary>
         /// <param name="item">The object to remove from the <see cref="T:System.Collections.Generic.ICollection`1" />.</param>
         /// <returns>
-        /// true if <paramref name="item" /> was successfully removed from the <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false. This method also returns false if <paramref name="item" /> is not found in the original <see cref="T:System.Collections.Generic.ICollection`1" />.
+        ///     true if <paramref name="item" /> was successfully removed from the
+        ///     <see cref="T:System.Collections.Generic.ICollection`1" />; otherwise, false. This method also returns false if
+        ///     <paramref name="item" /> is not found in the original <see cref="T:System.Collections.Generic.ICollection`1" />.
         /// </returns>
         public bool Remove(T item)
         {
-            return this.InternalRemoveAt(this.IndexOf(item));
+            return this.InternalRemove(item);
         }
-
         #endregion ICollection<T> Implementation
 
         #region Extended CRUD operators that take into account the DateTime of the change
-
         /// <summary>
-        /// Removes the specified item - extended to only remove the item if the page was not pulled before the updatedat DateTime.
+        ///     Removes the specified item - extended to only remove the item if the page was not pulled before the updatedat
+        ///     DateTime.
         /// </summary>
         /// <param name="item">The item.</param>
         /// <param name="updatedAt">The updated at.</param>
         /// <returns></returns>
         public bool Remove(T item, object updatedAt)
         {
-            return this.InternalRemoveAt(this.IndexOf(item), updatedAt);
+            return this.InternalRemove(item, updatedAt);
         }
 
         /// <summary>
-        /// Removes at the given index - extended to only remove the item if the page was not pulled before the updatedat DateTime.
+        ///     Removes at the given index - extended to only remove the item if the page was not pulled before the updatedat
+        ///     DateTime.
         /// </summary>
         /// <param name="index">The index.</param>
         /// <param name="updatedAt">The updated at.</param>
@@ -228,7 +299,8 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Adds (appends) the specified item - extended to only add the item if the page was not pulled before the updatedat DateTime.
+        ///     Adds (appends) the specified item - extended to only add the item if the page was not pulled before the updatedat
+        ///     DateTime.
         /// </summary>
         /// <param name="item">The item.</param>
         /// <param name="updatedAt">The updated at.</param>
@@ -239,7 +311,8 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Inserts the specified index - extended to only insert the item if the page was not pulled before the updatedat DateTime.
+        ///     Inserts the specified index - extended to only insert the item if the page was not pulled before the updatedat
+        ///     DateTime.
         /// </summary>
         /// <param name="index">The index.</param>
         /// <param name="item">The item.</param>
@@ -248,8 +321,9 @@ namespace AlphaChiTech.VirtualizingCollection
         {
             this.InternalInsertAt(index, item, updatedAt);
         }
+
         /// <summary>
-        /// Adds the range.
+        ///     Adds the range.
         /// </summary>
         /// <param name="newValues">The new values.</param>
         /// <param name="timestamp">The updatedat object.</param>
@@ -258,16 +332,19 @@ namespace AlphaChiTech.VirtualizingCollection
         {
             var edit = this.GetProviderAsEditable();
 
-            int index = -1;
-            List<T> items = new List<T>();
+            var index = -1;
+            var items = new List<T>();
 
-            foreach (var item in newValues)
+            foreach(var item in newValues)
             {
                 items.Add(item);
                 index = edit.OnAppend(item, timestamp);
+                if (!this.IsSourceObservable)
+                {
+                    var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
+                    this.RaiseCollectionChangedEvent(args);
+                }
 
-                NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
-                this.RaiseCollectionChangedEvent(args);
             }
 
 
@@ -276,41 +353,46 @@ namespace AlphaChiTech.VirtualizingCollection
 
             return index;
         }
-
         #endregion Extended CRUD operators that take into account the DateTime of the change
 
         #region IList Implementation
-
         /// <summary>
-        /// Adds an item to the <see cref="T:System.Collections.IList" />.
+        ///     Adds an item to the <see cref="T:System.Collections.IList" />.
         /// </summary>
         /// <param name="value">The object to add to the <see cref="T:System.Collections.IList" />.</param>
         /// <returns>
-        /// The position into which the new element was inserted, or -1 to indicate that the item was not inserted into the collection.
+        ///     The position into which the new element was inserted, or -1 to indicate that the item was not inserted into the
+        ///     collection.
         /// </returns>
         public int Add(object value)
         {
             return this.InternalAdd((T)value, null);
         }
 
+        bool IObservableCollection<T>.Remove(object item) { throw new NotImplementedException(); }
+
+        bool IObservableCollection.Remove(object item) { throw new NotImplementedException(); }
+
         /// <summary>
-        /// Determines whether the <see cref="T:System.Collections.IList" /> contains a specific value.
+        ///     Determines whether the <see cref="T:System.Collections.IList" /> contains a specific value.
         /// </summary>
         /// <param name="value">The object to locate in the <see cref="T:System.Collections.IList" />.</param>
         /// <returns>
-        /// true if the <see cref="T:System.Object" /> is found in the <see cref="T:System.Collections.IList" />; otherwise, false.
+        ///     true if the <see cref="T:System.Object" /> is found in the <see cref="T:System.Collections.IList" />; otherwise,
+        ///     false.
         /// </returns>
         public bool Contains(object value)
         {
+            if(value == null) return false; //some UI asked for null... wtf
             return this.Contains((T)value);
         }
 
         /// <summary>
-        /// Determines the index of a specific item in the <see cref="T:System.Collections.IList" />.
+        ///     Determines the index of a specific item in the <see cref="T:System.Collections.IList" />.
         /// </summary>
         /// <param name="value">The object to locate in the <see cref="T:System.Collections.IList" />.</param>
         /// <returns>
-        /// The index of <paramref name="value" /> if found in the list; otherwise, -1.
+        ///     The index of <paramref name="value" /> if found in the list; otherwise, -1.
         /// </returns>
         public int IndexOf(object value)
         {
@@ -318,7 +400,7 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Inserts an item to the <see cref="T:System.Collections.IList" /> at the specified index.
+        ///     Inserts an item to the <see cref="T:System.Collections.IList" /> at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index at which <paramref name="value" /> should be inserted.</param>
         /// <param name="value">The object to insert into the <see cref="T:System.Collections.IList" />.</param>
@@ -328,16 +410,15 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Gets a value indicating whether the <see cref="T:System.Collections.IList" /> has a fixed size.
+        ///     Gets a value indicating whether the <see cref="T:System.Collections.IList" /> has a fixed size.
         /// </summary>
         /// <returns>true if the <see cref="T:System.Collections.IList" /> has a fixed size; otherwise, false.</returns>
-        public bool IsFixedSize
-        {
-            get { return false; }
-        }
+        public bool IsFixedSize => false;
+
+        void IObservableCollection.Add(object item) { this.Add(item); }
 
         /// <summary>
-        /// Removes the first occurrence of a specific object from the <see cref="T:System.Collections.IList" />.
+        ///     Removes the first occurrence of a specific object from the <see cref="T:System.Collections.IList" />.
         /// </summary>
         /// <param name="value">The object to remove from the <see cref="T:System.Collections.IList" />.</param>
         public void Remove(object value)
@@ -346,7 +427,7 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Removes the <see cref="T:System.Collections.IList" /> item at the specified index.
+        ///     Removes the <see cref="T:System.Collections.IList" /> item at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index of the item to remove.</param>
         public void RemoveAt(int index)
@@ -355,32 +436,24 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Gets or sets the element at the specified index.
+        ///     Gets or sets the element at the specified index.
         /// </summary>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        public object this[int index]
+        object IList.this[int index]
         {
-            get
-            {
-                return this.InternalGetValue(index, this._DefaultSelectionContext);
-            }
-            set
-            {
-                this.InternalSetValue(index, (T)value);
-            }
+            get => this.InternalGetValue(index, this.DefaultSelectionContext);
+            set => this.InternalSetValue(index, (T) value);
         }
-
         #endregion IList Implementation
 
         #region IList<T> Implementation
-
         /// <summary>
-        /// Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.
+        ///     Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.
         /// </summary>
         /// <param name="item">The object to locate in the <see cref="T:System.Collections.Generic.IList`1" />.</param>
         /// <returns>
-        /// The index of <paramref name="item" /> if found in the list; otherwise, -1.
+        ///     The index of <paramref name="item" /> if found in the list; otherwise, -1.
         /// </returns>
         public int IndexOf(T item)
         {
@@ -388,7 +461,7 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.
+        ///     Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.
         /// </summary>
         /// <param name="index">The zero-based index at which <paramref name="item" /> should be inserted.</param>
         /// <param name="item">The object to insert into the <see cref="T:System.Collections.Generic.IList`1" />.</param>
@@ -398,242 +471,238 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Gets or sets the element at the specified index.
+        ///     Gets or sets the element at the specified index.
         /// </summary>
         /// <param name="index">The index.</param>
         /// <returns></returns>
-        T IList<T>.this[int index]
+        public T this[int index]
         {
-            get
-            {
-                return this.InternalGetValue(index, this._DefaultSelectionContext);
-            }
-            set
-            {
-                this.InternalSetValue(index, value);
-            }
+            get => this.InternalGetValue(index, this.DefaultSelectionContext);
+            set => this.InternalSetValue(index, value);
         }
-
         #endregion IList<T> Implementation
 
         #region Public Properties
-
         /// <summary>
-        /// Gets or sets the provider if its asynchronous.
+        ///     Gets or sets the provider if its asynchronous.
         /// </summary>
         /// <value>
-        /// The provider asynchronous.
+        ///     The provider asynchronous.
         /// </value>
         public IItemSourceProviderAsync<T> ProviderAsync
         {
-            get { return this._ProviderAsync; }
+            get => this._providerAsync;
             set
             {
                 this.ClearCountChangedHooks();
-                this._ProviderAsync = value;
-                if (this._ProviderAsync is INotifyCountChanged)
+                this._providerAsync = value;
+                if (this._providerAsync is INotifyCountChanged)
                 {
-                    (this._ProviderAsync as INotifyCountChanged).CountChanged += this.VirtualizingObservableCollection_CountChanged;
+                    (this._providerAsync as INotifyCountChanged).CountChanged += this.VirtualizingObservableCollection_CountChanged;
                 }
             }
         }
 
-        void VirtualizingObservableCollection_CountChanged(object sender, CountChangedEventArgs args)
+        private void VirtualizingObservableCollection_CountChanged(object sender, CountChangedEventArgs args)
         {
-            if (args.NeedsReset)
+            if(args.NeedsReset)
             {
                 // Send a reset..
-                this.RaiseCollectionChangedEvent(_CC_ResetArgs);
+                this.RaiseCollectionChangedEvent(_ccResetArgs);
             }
             this.OnCountTouched();
         }
 
         /// <summary>
-        /// Gets or sets the provider if its not asynchronous.
+        ///     Gets or sets the provider if its not asynchronous.
         /// </summary>
         /// <value>
-        /// The provider.
+        ///     The provider.
         /// </value>
         public IItemSourceProvider<T> Provider
         {
-            get { return this._Provider; }
+            get => this._provider;
             set
             {
                 this.ClearCountChangedHooks();
-                this._Provider = value;
+                this._provider = value;
 
-                if (this._Provider is INotifyCountChanged)
+                if (this._provider is INotifyCountChanged)
                 {
-                    (this._Provider as INotifyCountChanged).CountChanged += this.VirtualizingObservableCollection_CountChanged;
-                }
+                    (this._provider as INotifyCountChanged).CountChanged += this.VirtualizingObservableCollection_CountChanged;
+                }//TODO check this commented code
+                //if(this._provider is INotifyCollectionChanged) {
+                //    (this._provider as INotifyCollectionChanged).CollectionChanged += this.VirtualizingObservableCollection_CollectionChanged;
+                //}
             }
         }
 
-        void ClearCountChangedHooks()
+        private void VirtualizingObservableCollection_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
-            if(this._Provider is INotifyCountChanged)
-            {
-                (this._Provider as INotifyCountChanged).CountChanged -= this.VirtualizingObservableCollection_CountChanged;
-            }
-
-            if(this._ProviderAsync is INotifyCountChanged)
-            {
-                (this._ProviderAsync as INotifyCountChanged).CountChanged -= this.VirtualizingObservableCollection_CountChanged;
-            }
+            this.RaiseCollectionChangedEvent(e);
+            this.OnCountTouched();
         }
 
+        private void ClearCountChangedHooks()
+        {
+            if (this._provider is INotifyCountChanged)
+            {
+                (this._provider as INotifyCountChanged).CountChanged -= this.VirtualizingObservableCollection_CountChanged;
+            }
+
+            if (this._providerAsync is INotifyCountChanged)
+            {
+                (this._providerAsync as INotifyCountChanged).CountChanged -= this.VirtualizingObservableCollection_CountChanged;
+            }
+            //TODO check this commented code
+            //if(this._provider is INotifyCollectionChanged) {
+            //    (this._provider as INotifyCollectionChanged).CollectionChanged -= this.VirtualizingObservableCollection_CollectionChanged;
+            //}
+            //if(this._providerAsync is INotifyCollectionChanged) {
+            //    (this._providerAsync as INotifyCollectionChanged).CollectionChanged -= this.VirtualizingObservableCollection_CollectionChanged;
+            //}
+        }
         #endregion Public Properties
 
         #region INotifyCollectionChanged Implementation
-
-        private bool _SupressEventErrors = false;
-
-        public bool SupressEventErrors
-        {
-            get
-            {
-                return this._SupressEventErrors;
-            }
-
-            set
-            {
-                this._SupressEventErrors = value;
-            }
-        }
-
+        public bool SupressEventErrors { get; set; } = false;
+        //TODO check this code
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
+        event NotifyCollectionChangedEventHandler INotifyCollectionChanged.CollectionChanged
+        {
+            add => this.CollectionChanged += value;
+            remove => this.CollectionChanged -= value;
+        }
+
         /// <summary>
-        /// Raises the collection changed event.
+        ///     Raises the collection changed event.
         /// </summary>
-        /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs"/> instance containing the event data.</param>
+        /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs" /> instance containing the event data.</param>
+        /// //todo check
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
-            if (this._BulkCount > 0) return;
+            if(this._bulkCount > 0) { return; }
 
-            var evnt = this.CollectionChanged;
+            var eventHandler = this.CollectionChanged;
+            if(eventHandler == null) { return; }
 
-            if (evnt != null)
+            // Walk thru invocation list.
+            var delegates = eventHandler.GetInvocationList();
+
+            foreach(var @delegate in delegates)
             {
+                var handler = (NotifyCollectionChangedEventHandler) @delegate;
+
+                // If the subscriber is a DispatcherObject and different thread.
+                var dispatcherObject = handler.Target as DispatcherObject;
                 try
                 {
-                    evnt(this, args);
-                }
-                catch (Exception ex)
-                {
-                    if (!this.SupressEventErrors)
+                    if(dispatcherObject != null && !dispatcherObject.CheckAccess())
                     {
-                        throw ex;
+                        // Invoke handler in the target dispatcher's thread... 
+                        // asynchronously for better responsiveness.
+                        dispatcherObject.Dispatcher.BeginInvoke(DispatcherPriority.DataBind, handler, this, args);
                     }
+                    else
+                    {
+                        // Execute handler as is.
+                        handler(this, args);
+                    }
+                }
+                catch(Exception ex) //WTF? exception catch during remove operations with collection, try add and remove investigation
+                {
+                    Debug.WriteLine(ex.Message);
+                    Debugger.Break();
                 }
             }
         }
-
         #endregion INotifyCollectionChanged Implementation
 
         #region INotifyPropertyChanged implementation
-
         public event PropertyChangedEventHandler PropertyChanged;
 
-        private static PropertyChangedEventArgs _PC_CountArgs = new PropertyChangedEventArgs("Count");
-        private static NotifyCollectionChangedEventArgs _CC_ResetArgs = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
-
-        private void OnCountTouched()
+        event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged
         {
-            this.RaisePropertyChanged(_PC_CountArgs);
+            add => this.PropertyChanged += value;
+            remove => this.PropertyChanged -= value;
         }
+
+        private static readonly PropertyChangedEventArgs _pcCountArgs = new PropertyChangedEventArgs("Count");
+        private static readonly NotifyCollectionChangedEventArgs _ccResetArgs = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
+
+        private void OnCountTouched() { this.RaisePropertyChanged(_pcCountArgs); }
 
         protected void RaisePropertyChanged(PropertyChangedEventArgs args)
         {
-            if (this._BulkCount > 0) return;
+            if(this._bulkCount > 0) { return; }
 
             var evnt = this.PropertyChanged;
-
-            if (evnt != null)
-            {
-                evnt(this, args);
-            }
+            evnt?.Invoke(this, args);
         }
-
         #endregion INotifyPropertyChanged implementation
 
         #region Bulk Operation implementation
-
         /// <summary>
-        /// Releases the bulk mode.
+        ///     Releases the bulk mode.
         /// </summary>
         internal void ReleaseBulkMode()
         {
-            if (this._BulkCount > 0) this._BulkCount--;
+            if(this._bulkCount > 0) { this._bulkCount--; }
 
-            if (this._BulkCount == 0)
+            if(this._bulkCount == 0)
             {
-                this.RaiseCollectionChangedEvent(_CC_ResetArgs);
-                this.RaisePropertyChanged(_PC_CountArgs);
+                this.RaiseCollectionChangedEvent(_ccResetArgs);
+                this.RaisePropertyChanged(_pcCountArgs);
             }
         }
 
         /// <summary>
-        /// Enters the bulk mode.
+        ///     Enters the bulk mode.
         /// </summary>
         /// <returns></returns>
         public BulkMode EnterBulkMode()
         {
-            this._BulkCount++;
+            this._bulkCount++;
 
             return new BulkMode(this);
         }
 
         /// <summary>
-        /// The Bulk mode IDisposable proxy
+        ///     The Bulk mode IDisposable proxy
         /// </summary>
         public class BulkMode : IDisposable
         {
-            public BulkMode(VirtualizingObservableCollection<T> voc)
+            private bool _isDisposed;
+            private readonly VirtualizingObservableCollection<T> _voc;
+
+            public BulkMode(VirtualizingObservableCollection<T> voc) { this._voc = voc; }
+
+            public void Dispose() { this.OnDispose(); }
+
+            private void OnDispose()
             {
-                this._voc = voc;
-            }
-
-            private VirtualizingObservableCollection<T> _voc = null;
-
-            bool _IsDisposed = false;
-
-            public void Dispose()
-            {
-                this.OnDispose();
-            }
-
-            void OnDispose()
-            {
-                if (!this._IsDisposed)
+                if(!this._isDisposed)
                 {
-                    this._IsDisposed = true;
-                    if (this._voc != null) this._voc.ReleaseBulkMode();
+                    this._isDisposed = true;
+                    if(this._voc != null) { this._voc.ReleaseBulkMode(); }
                 }
             }
 
-            ~BulkMode()
-            {
-                this.OnDispose();
-            }
+            ~BulkMode() { this.OnDispose(); }
         }
-
         #endregion Bulk Operation implementation
 
         #region Private Properties
-
-        protected String _DefaultSelectionContext = new Guid().ToString();
-        private IItemSourceProvider<T> _Provider = null;
-        private IItemSourceProviderAsync<T> _ProviderAsync = null;
-        private int _BulkCount = 0;
-
+        protected String DefaultSelectionContext = new Guid().ToString();
+        private IItemSourceProvider<T> _provider;
+        private IItemSourceProviderAsync<T> _providerAsync;
+        private int _bulkCount;
         #endregion Private Properties
 
         #region Internal implementation
-
-
         /// <summary>
-        /// Gets the provider as editable.
+        ///     Gets the provider as editable.
         /// </summary>
         /// <returns></returns>
         /// <exception cref="System.NotSupportedException"></exception>
@@ -641,10 +710,8 @@ namespace AlphaChiTech.VirtualizingCollection
         {
             IEditableProvider<T> ret = null;
 
-            if (this.Provider != null)
-            {
+            if(this.Provider != null) {
                 ret = this.Provider as IEditableProvider<T>;
-
             }
             else
             {
@@ -660,7 +727,7 @@ namespace AlphaChiTech.VirtualizingCollection
         }
 
         /// <summary>
-        /// Replaces oldValue with newValue at index if updatedat is newer or null.
+        ///     Replaces oldValue with newValue at index if updatedat is newer or null.
         /// </summary>
         /// <param name="index">The index.</param>
         /// <param name="oldValue">The old value.</param>
@@ -670,18 +737,23 @@ namespace AlphaChiTech.VirtualizingCollection
         {
             var edit = this.GetProviderAsEditable();
 
-            if (edit != null)
+            if(edit != null)
             {
                 edit.OnReplace(index, oldValue, newValue, timestamp);
 
-                NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newValue, oldValue, index);
-                this.RaiseCollectionChangedEvent(args);
+                if (!this.IsSourceObservable)
+                {
+                    var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newValue,
+                        oldValue, index);
+                    this.RaiseCollectionChangedEvent(args);
+                }
+
             }
         }
 
-        void InternalClear()
+        private void InternalClear()
         {
-            if (this.Provider != null)
+            if(this.Provider != null)
             {
                 if (this.Provider is IProviderPreReset)
                 {
@@ -699,63 +771,61 @@ namespace AlphaChiTech.VirtualizingCollection
             }
         }
 
-        CancellationTokenSource _ResetToken = null;
+        private CancellationTokenSource _resetToken;
 
-        public async void ResetAsync()
+        public void Reset()
+        {
+            this.ResetAsync().Wait();
+        }
+        public async Task ResetAsync()
         {
             CancellationTokenSource cts = null;
 
             lock(this)
             {
-                if(this._ResetToken != null)
+                if(this._resetToken != null)
                 {
-                    this._ResetToken.Cancel();
-                    this._ResetToken = null;
+                    this._resetToken.Cancel();
+                    this._resetToken = null;
                 }
 
-                cts = this._ResetToken = new CancellationTokenSource();
+                cts = this._resetToken = new CancellationTokenSource();
             }
 
-            if (this.Provider != null)
+            if(this.Provider != null)
             {
-                if (this.Provider is IProviderPreReset)
+                if(this.Provider is IProviderPreReset)
                 {
                     (this.Provider as IProviderPreReset).OnBeforeReset();
                     if (cts.IsCancellationRequested)
                     {
                         return;
                     }
-                    
                 }
-
+                //TODO find why this was commented on git?
                 //this.Provider.OnReset(-2);
 
-                Task.Run(async () =>
+               await Task.Run(async () =>
+                {
+                    if(this.Provider is IAsyncResetProvider)
                     {
-                        if (this.Provider is IAsyncResetProvider)
+                        var count = await (this.Provider as IAsyncResetProvider).GetCountAsync();
+                        if (!cts.IsCancellationRequested)
                         {
-                            int count = await (this.Provider as IAsyncResetProvider).GetCountAsync();
-                            if (!cts.IsCancellationRequested)
-                            {
-                                VirtualizationManager.Instance.RunOnUI(() =>
-                                    this.Provider.OnReset(count)
-                                );
-                            }
-
+                            VirtualizationManager.Instance.RunOnUI(() =>
+                                this.Provider.OnReset(count));
                         }
-                        else
+                    }
+                    else
+                    {
+                        var count = this.Provider.GetCount(false);
+                        if (!cts.IsCancellationRequested)
                         {
-                            int count = this.Provider.GetCount(false);
-                            if (!cts.IsCancellationRequested)
-                            {
-                                VirtualizationManager.Instance.RunOnUI(() =>
-                                    this.Provider.OnReset(count)
-                                );
-                            }
+                            VirtualizationManager.Instance.RunOnUI(() => 
+                                this.Provider.OnReset(count));
                         }
-
-                    });
-
+                    }
+                });
             }
             else
             {
@@ -766,135 +836,136 @@ namespace AlphaChiTech.VirtualizingCollection
                 this.ProviderAsync.OnReset(await this.ProviderAsync.Count);
             }
 
-            lock(this)
+            lock (this)
             {
-                if(this._ResetToken == cts)
+                if (this._resetToken == cts)
                 {
-                    this._ResetToken = null;
+                    this._resetToken = null;
                 }
             }
         }
 
-        T InternalGetValue(int index, string selectionContext)
+        private T InternalGetValue(int index, string selectionContext)
         {
-            bool allowPlaceholder = true;
-            if (selectionContext != this._DefaultSelectionContext) allowPlaceholder = false;
+            bool allowPlaceholder = selectionContext == this.DefaultSelectionContext;
 
             if (this.Provider != null)
             {
                 return this.Provider.GetAt(index, this, allowPlaceholder);
             }
-            else
-            {
-                return Task.Run(() => this.ProviderAsync.GetAt(index, this, allowPlaceholder)).Result;
-            }
+            return Task.Run(() => this.ProviderAsync.GetAt(index, this, allowPlaceholder)).Result;
         }
 
-        T InternalSetValue(int index, T newValue)
+        private T InternalSetValue(int index, T newValue)
         {
-            T oldValue = this.InternalGetValue(index, this._DefaultSelectionContext);
+            var oldValue = this.InternalGetValue(index, this.DefaultSelectionContext);
             var edit = this.GetProviderAsEditable();
             edit.OnReplace(index, oldValue, newValue, null);
 
-            List<T> newItems = new List<T>(); newItems.Add(newValue);
-            List<T> oldItems = new List<T>(); oldItems.Add(oldValue);
+            var newItems = new List<T> {newValue};
+            var oldItems = new List<T> {oldValue};
 
-            NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems, oldItems, index);
-            this.RaiseCollectionChangedEvent(args);
+            if (!this.IsSourceObservable)
+            {
+                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems,
+                    oldItems, index);
+                this.RaiseCollectionChangedEvent(args);
+            }
 
             return oldValue;
         }
 
-        int InternalAdd(T newValue, object timestamp)
+        private int InternalAdd(T newValue, object timestamp)
         {
             var edit = this.GetProviderAsEditable();
             var index = edit.OnAppend(newValue, timestamp);
-
-            NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, index);
-            this.RaiseCollectionChangedEvent(args);
-
             this.OnCountTouched();
+
+            if (!this.IsSourceObservable)
+            {
+                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, index);
+                this.RaiseCollectionChangedEvent(args);
+            }
 
             return index;
         }
 
-        int InternalGetCount()
+        private int InternalGetCount()
         {
-            int ret = 0;
+            var ret = 0;
 
-            if (this.Provider != null)
-            {
+            if(this.Provider != null) {
                 ret = this.Provider.GetCount(true);
             }
             else
             {
-                ret = Task.Run( () => this.ProviderAsync.Count).Result;
+                ret = Task.Run(() => this.ProviderAsync.Count).Result;
             }
 
 
             return ret;
         }
 
-        void InternalInsertAt(int index, T item, object timestamp = null)
+        private void InternalInsertAt(int index, T item, object timestamp = null)
         {
-
             var edit = this.GetProviderAsEditable();
             edit.OnInsert(index, item, timestamp);
 
-            NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
-            this.RaiseCollectionChangedEvent(args);
+            this.OnCountTouched();
+
+            if (!this.IsSourceObservable)
+            {
+                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
+                this.RaiseCollectionChangedEvent(args);
+            }
+
+        }
+
+        private bool InternalRemoveAt(int index, object timestamp = null)
+        {
+            var edit = this.Provider as IEditableProviderIndexBased<T>;
+            if (edit == null) return false;
+
+            var oldValue = edit.OnRemove(index, timestamp);
 
             this.OnCountTouched();
-        }
 
-        bool InternalRemoveAt(int index, object timestamp = null)
-        {
-            T oldValue = this.InternalGetValue(index, this._DefaultSelectionContext);
-
-            if (oldValue == null)
+            if (!this.IsSourceObservable)
             {
-                return false;
-            }
-            else
-            {
-                var edit = this.GetProviderAsEditable();
-                edit.OnRemove(index, oldValue, timestamp);
-
-                NotifyCollectionChangedEventArgs args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
+                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
                 this.RaiseCollectionChangedEvent(args);
-
-                this.OnCountTouched();
-
-                return true;
             }
+
+            return true;
         }
 
-        int InternalIndexOf(T item)
+        private bool InternalRemove(T item, object timestamp = null)
         {
-            if (this.Provider != null)
+            if (item == null) { return false; }
+            var edit = this.Provider as IEditableProviderItemBased<T>;
+            if(edit == null)
+                return false;
+            var index = edit.OnRemove(item, timestamp);
+            this.OnCountTouched();
+
+            if (!this.IsSourceObservable)
             {
-                return this.Provider.IndexOf(item);
+                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index);
+                this.RaiseCollectionChangedEvent(args);
             }
-            else
-            {
-                return Task.Run( () => this.ProviderAsync.IndexOf(item)).Result;
-            }
+
+            return true;
         }
 
-        void EnsureCountIsGotNONASync()
+        private int InternalIndexOf(T item)
         {
-            if(this.Provider != null)
-            {
-                this.Provider.GetCount(false);
-            }
-            else
-            {
-                
-            }
+            return this.Provider?.IndexOf(item) ?? Task.Run(() => this.ProviderAsync.IndexOf(item)).Result;
         }
 
+        private void EnsureCountIsGotNonaSync()
+        {
+            this.Provider?.GetCount(false);
+        }
         #endregion Internal implementation
-
     }
-
 }

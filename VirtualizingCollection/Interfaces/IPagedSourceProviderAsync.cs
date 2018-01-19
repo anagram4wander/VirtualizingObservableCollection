@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using AlphaChiTech.VirtualizingCollection.Pageing;
+using AlphaChiTech.Virtualization.Pageing;
 
 namespace AlphaChiTech.VirtualizingCollection.Interfaces
 {
@@ -12,5 +12,6 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
         Task<int> GetCountAsync();
 
         Task<int> IndexOfAsync( T item );
+        Task<bool> ContainsAsync(T item);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace AlphaChiTech.VirtualizingCollection.Interfaces
 {
-    public interface IItemSourceProviderAsync<T> : IBaseSourceProvider
+    public interface IItemSourceProviderAsync<T> : IBaseSourceProvider<T>
     {
         Task<T> GetAt(int index, object voc, bool usePlaceholder);
 

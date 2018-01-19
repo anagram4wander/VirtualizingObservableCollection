@@ -1,37 +1,37 @@
 ﻿using System;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Actions
+namespace AlphaChiTech.Virtualization.Actions
 {
     public class ReclaimPagesWA : BaseRepeatableActionVirtualization
     {
         public ReclaimPagesWA(IReclaimableService provider, string sectionContext)
             : base(VirtualActionThreadModelEnum.Background, true, TimeSpan.FromMinutes(1))
         {
-            this._WRProvider = new WeakReference(provider);
+            this._wrProvider = new WeakReference(provider);
         }
 
-        WeakReference _WRProvider = null;
+        readonly WeakReference _wrProvider = null;
 
-        string _SectionContext = "";
+        readonly string _sectionContext = "";
 
         public override void DoAction()
         {
-            this._LastRun = DateTime.Now;
+            this.LastRun = DateTime.Now;
 
-            var reclaimer = this._WRProvider.Target as IReclaimableService;
+            var reclaimer = this._wrProvider.Target as IReclaimableService;
 
             if (reclaimer != null)
             {
-                reclaimer.RunClaim(this._SectionContext);
+                reclaimer.RunClaim(this._sectionContext);
             }
         }
 
         public override bool KeepInActionsList()
         {
-            bool ret = base.KeepInActionsList();
+            var ret = base.KeepInActionsList();
 
-            if (!this._WRProvider.IsAlive) ret = false;
+            if (!this._wrProvider.IsAlive) ret = false;
 
             return ret;
         }

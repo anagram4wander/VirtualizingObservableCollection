@@ -1,13 +1,13 @@
 ﻿using System;
 
-namespace AlphaChiTech.VirtualizingCollection.Actions
+namespace AlphaChiTech.Virtualization.Actions
 {
     /// <summary>
     /// This is a VirtualAction that wraps an Action, optionally with a repeating schedule.
     /// </summary>
     public class ActionVirtualizationWrapper : BaseRepeatableActionVirtualization
     {
-        private Action _Action = null;
+        private readonly Action _action = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ActionVirtualizationWrapper"/> class.
@@ -21,7 +21,7 @@ namespace AlphaChiTech.VirtualizingCollection.Actions
             bool isRepeating = false, TimeSpan? repeatingSchedule = null)
             : base(threadModel, isRepeating, repeatingSchedule)
         {
-            this._Action = action;
+            this._action = action;
         }
 
         /// <summary>
@@ -29,8 +29,8 @@ namespace AlphaChiTech.VirtualizingCollection.Actions
         /// </summary>
         public override void DoAction()
         {
-            var a = this._Action;
-            this._LastRun = DateTime.Now;
+            var a = this._action;
+            this.LastRun = DateTime.Now;
 
             if (a != null)
             {

@@ -1,6 +1,6 @@
 ﻿using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Actions
+namespace AlphaChiTech.Virtualization.Actions
 {
     /// <summary>
     /// Base Class that does an action on the dispatcher thread. Simply implement the DoAction method.

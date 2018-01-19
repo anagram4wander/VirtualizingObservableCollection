@@ -1,31 +1,31 @@
 ﻿using System;
 
-namespace AlphaChiTech.VirtualizingCollection.Actions
+namespace AlphaChiTech.Virtualization.Actions
 {
-    public class PlaceholderReplaceWA<T> : BaseActionVirtualization
+    public class PlaceholderReplaceWA<T> : BaseActionVirtualization where T : class
     {
-        private T _OldValue;
-        private T _NewValue;
-        private int _Index;
+        private readonly T _oldValue;
+        private readonly T _newValue;
+        private readonly int _index;
 
-        WeakReference _VOC;
+        readonly WeakReference _voc;
 
         public PlaceholderReplaceWA(VirtualizingObservableCollection<T> voc, T oldValue, T newValue, int index)
             : base(VirtualActionThreadModelEnum.UseUIThread)
         {
-            this._VOC = new WeakReference(voc);
-            this._OldValue = oldValue;
-            this._NewValue = newValue;
-            this._Index = index;
+            this._voc = new WeakReference(voc);
+            this._oldValue = oldValue;
+            this._newValue = newValue;
+            this._index = index;
         }
 
         public override void DoAction()
         {
-            var voc = (VirtualizingObservableCollection<T>)this._VOC.Target;
+            var voc = (VirtualizingObservableCollection<T>)this._voc.Target;
 
-            if (voc != null && this._VOC.IsAlive)
+            if (voc != null && this._voc.IsAlive)
             {
-                voc.ReplaceAt(this._Index, this._OldValue, this._NewValue, null);
+                voc.ReplaceAt(this._index, this._oldValue, this._newValue, null);
             }
         }
     }

@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Pageing
+namespace AlphaChiTech.Virtualization.Pageing
 {
     public class BasePagedSourceProvider<T> : IPagedSourceProvider<T>
     {
@@ -13,75 +14,78 @@ namespace AlphaChiTech.VirtualizingCollection.Pageing
             Func<int, int, PagedSourceItemsPacket<T>> funcGetItemsAt = null,
             Func<int> funcGetCount = null,
             Func<T, int> funcIndexOf = null,
+            Func<T, bool> funcContains = null,
             Action<int> actionOnReset = null
             )
         {
             this.FuncGetItemsAt = funcGetItemsAt;
             this.FuncGetCount = funcGetCount;
             this.FuncIndexOf = funcIndexOf;
+            this.FuncContains = funcContains;
             this.ActionOnReset = actionOnReset;
         }
 
-        private Func<int, int, PagedSourceItemsPacket<T>> _FuncGetItemsAt = null;
+        public Func<int, int, PagedSourceItemsPacket<T>> FuncGetItemsAt { get; set; }
 
-        public Func<int, int, PagedSourceItemsPacket<T>> FuncGetItemsAt
-        {
-            get { return this._FuncGetItemsAt; }
-            set { this._FuncGetItemsAt = value; }
-        }
-        private Func<int> _FuncGetCount = null;
+        public Func<int> FuncGetCount { get; set; }
 
-        public Func<int> FuncGetCount
-        {
-            get { return this._FuncGetCount; }
-            set { this._FuncGetCount = value; }
-        }
-        private Func<T, int> _FuncIndexOf = null;
+        public Func<T, int> FuncIndexOf { get; set; }
+        public Func<T, bool> FuncContains { get; set; }
 
-        public Func<T, int> FuncIndexOf
-        {
-            get { return this._FuncIndexOf; }
-            set { this._FuncIndexOf = value; }
-        }
-        private Action<int> _ActionOnReset = null;
-
-        public Action<int> ActionOnReset
-        {
-            get { return this._ActionOnReset; }
-            set { this._ActionOnReset = value; }
-        }
+        public Action<int> ActionOnReset { get; set; }
 
         public virtual PagedSourceItemsPacket<T> GetItemsAt(int pageoffset, int count, bool usePlaceholder)
         {
-            if (this._FuncGetItemsAt != null) return this._FuncGetItemsAt.Invoke(pageoffset, count);
-
-            return null;
+            return this.FuncGetItemsAt?.Invoke(pageoffset, count);
         }
+
+        /// <summary>
+        /// Copies the elements of the <see cref="T:System.Collections.ICollection"/> to an <see cref="T:System.Array"/>, starting at a particular <see cref="T:System.Array"/> index.
+        /// </summary>
+        /// <param name="array">The one-dimensional <see cref="T:System.Array"/> that is the destination of the elements copied from <see cref="T:System.Collections.ICollection"/>. The <see cref="T:System.Array"/> must have zero-based indexing. </param><param name="index">The zero-based index in <paramref name="array"/> at which copying begins. </param><exception cref="T:System.ArgumentNullException"><paramref name="array"/> is null. </exception><exception cref="T:System.ArgumentOutOfRangeException"><paramref name="index"/> is less than zero. </exception><exception cref="T:System.ArgumentException"><paramref name="array"/> is multidimensional.-or- The number of elements in the source <see cref="T:System.Collections.ICollection"/> is greater than the available space from <paramref name="index"/> to the end of the destination <paramref name="array"/>.-or-The type of the source <see cref="T:System.Collections.ICollection"/> cannot be cast automatically to the type of the destination <paramref name="array"/>.</exception>
+        public void CopyTo(Array array, int index) { throw new NotImplementedException(); }
 
         public virtual int Count
         {
             get
             {
-                int ret = 0;
+                var ret = 0;
 
-                if (this._FuncGetCount != null) ret = this._FuncGetCount.Invoke();
+                if (this.FuncGetCount != null) ret = this.FuncGetCount.Invoke();
 
                 return ret;
             }
         }
 
+        /// <summary>
+        /// Gets an object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection"/>.
+        /// </summary>
+        /// <returns>
+        /// An object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection"/>.
+        /// </returns>
+        public object SyncRoot => this;
+
+        /// <summary>
+        /// Gets a value indicating whether access to the <see cref="T:System.Collections.ICollection"/> is synchronized (thread safe).
+        /// </summary>
+        /// <returns>
+        /// true if access to the <see cref="T:System.Collections.ICollection"/> is synchronized (thread safe); otherwise, false.
+        /// </returns>
+        public bool IsSynchronized { get; } = false;
+
         public virtual int IndexOf(T item)
         {
-            int ret = -1;
+            return this.FuncIndexOf?.Invoke(item) ?? -1 ;
+        }
 
-            if (this._FuncIndexOf != null) ret = this._FuncIndexOf.Invoke(item);
-
-            return ret;
+        public bool Contains(T item)
+        {
+            return this.FuncContains?.Invoke(item) ?? false;
         }
 
         public virtual void OnReset(int count)
         {
-            if (this._ActionOnReset != null) this._ActionOnReset.Invoke(count);
+            this.ActionOnReset?.Invoke(count);
         }
     }
 }

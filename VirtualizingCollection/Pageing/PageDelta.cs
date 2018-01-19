@@ -1,8 +1,20 @@
-﻿namespace AlphaChiTech.VirtualizingCollection.Pageing
+﻿using System;
+
+namespace AlphaChiTech.Virtualization.Pageing
 {
     internal class PageDelta
     {
-        public int Page { get; set; }
+        private int _page;
+        public int Page
+        {
+            get => this._page;
+            set
+            {
+                if(value < 0) throw new ArgumentOutOfRangeException($"Page number value for PageDelta must be >= 0, but {value} was provided.");
+                this._page = value;
+            }
+        }
+
         public int Delta { get; set; }
     }
 }

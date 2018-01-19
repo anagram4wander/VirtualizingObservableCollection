@@ -2,14 +2,11 @@
 using System.Threading.Tasks;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
-namespace AlphaChiTech.VirtualizingCollection.Pageing
+namespace AlphaChiTech.Virtualization.Pageing
 {
     public class PagedSourceProviderMakeAsync<T> : BasePagedSourceProvider<T>, IPagedSourceProviderAsync<T>, IProviderPreReset
     {
-      private Func<T, Task<int>> _FuncIndexOfAsync = null;
-      private Func<int, int, int, T> _FuncGetPlaceHolder = null;
-
-      public PagedSourceProviderMakeAsync()
+        public PagedSourceProviderMakeAsync()
         {
         }
 
@@ -17,45 +14,32 @@ namespace AlphaChiTech.VirtualizingCollection.Pageing
             Func<int, int, PagedSourceItemsPacket<T>> funcGetItemsAt = null,
             Func<int> funcGetCount = null,
             Func<T, Task<int>> funcIndexOfAsync = null,
+            Func<T, bool> funcContains = null,
+            Func<T, Task<bool>> funcContainsAsync = null,
             Action<int> actionOnReset = null,
             Func<int, int, int, T> funcGetPlaceHolder = null,
             Action actionOnBeforeReset = null
             )
-            : base(funcGetItemsAt, funcGetCount, null, actionOnReset)
+            : base(funcGetItemsAt, funcGetCount, null, funcContains, actionOnReset)
             //: base(funcGetItemsAt, funcGetCount, funcIndexOf, actionOnReset)
         {
             this.FuncGetPlaceHolder = funcGetPlaceHolder;
             this.ActionOnBeforeReset = actionOnBeforeReset;
-          this._FuncIndexOfAsync = funcIndexOfAsync;
+          this.FuncIndexOfAsync = funcIndexOfAsync;
+            this.FuncContainsAsync = funcContainsAsync;
         }
 
         public virtual void OnBeforeReset()
         {
-            if (this.ActionOnBeforeReset != null)
-            {
-                this.ActionOnBeforeReset.Invoke();
-            }
+            this.ActionOnBeforeReset?.Invoke();
         }
 
-        Action _ActionOnBeforeReset = null;
+        public Action ActionOnBeforeReset { get; set; }
 
-        public Action ActionOnBeforeReset
-        {
-            get { return this._ActionOnBeforeReset; }
-            set { this._ActionOnBeforeReset = value; }
-        }
+        public Func<int, int, int, T> FuncGetPlaceHolder { get; set; }
 
-        public Func<int, int, int, T> FuncGetPlaceHolder
-        {
-            get { return this._FuncGetPlaceHolder; }
-            set { this._FuncGetPlaceHolder = value; }
-        }
-
-        public Func<T, Task<int>> FuncIndexOfAsync
-        {
-          get { return this._FuncIndexOfAsync; }
-          set { this._FuncIndexOfAsync = value; }
-        }
+        public Func<T, Task<int>> FuncIndexOfAsync { get; set; }
+        public Func<T, Task<bool>> FuncContainsAsync { get; set; }
 
         public Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder)
         {
@@ -75,10 +59,10 @@ namespace AlphaChiTech.VirtualizingCollection.Pageing
 
         public virtual T GetPlaceHolder(int index, int page, int offset)
         {
-            T ret = default(T);
+            var ret = default(T);
 
-            if (this._FuncGetPlaceHolder != null)
-                ret = this._FuncGetPlaceHolder.Invoke(index, page, offset);
+            if (this.FuncGetPlaceHolder != null)
+                ret = this.FuncGetPlaceHolder.Invoke(index, page, offset);
 
             return ret;
         }
@@ -100,12 +84,12 @@ namespace AlphaChiTech.VirtualizingCollection.Pageing
 
       public Task<int> IndexOfAsync( T item )
       {
-        var ret = default( Task<int> );
-
-        if (this._FuncIndexOfAsync != null)
-          ret = this._FuncIndexOfAsync.Invoke( item );
-
-        return ret;
+            return this.FuncIndexOfAsync?.Invoke(item) ?? default(Task<int>);
       }
+
+        public Task<bool> ContainsAsync(T item)
+        {
+            return this.FuncContainsAsync?.Invoke(item) ?? default(Task<bool>);
+        }
     }
 }

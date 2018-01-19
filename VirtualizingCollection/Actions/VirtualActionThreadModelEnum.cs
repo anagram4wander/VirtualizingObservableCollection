@@ -1,4 +1,4 @@
-﻿namespace AlphaChiTech.VirtualizingCollection.Actions
+﻿namespace AlphaChiTech.Virtualization.Actions
 {
     public enum VirtualActionThreadModelEnum
     {

@@ -1,4 +1,4 @@
-﻿namespace AlphaChiTech.VirtualizingCollection.Pageing
+﻿namespace AlphaChiTech.Virtualization.Pageing
 {
     public enum PageFetchStateEnum
     {
