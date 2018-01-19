@@ -83,46 +83,29 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public virtual int IndexOf(T item)
         {
-            var ret = -1;
 
             if (this.FuncIndexOf != null)
             {
-                ret = this.FuncIndexOf.Invoke(item);
+                return this.FuncIndexOf.Invoke(item);
             }
             else if (this.FuncIndexOfAsync != null)
             {
-                ret = Task.Run(() => this.FuncIndexOfAsync.Invoke(item)).Result;
+                return Task.Run(() => this.FuncIndexOfAsync.Invoke(item)).Result;
             }
             else
             {
-                ret = Task.Run(() => this.IndexOfAsync(item)).Result;
+                return Task.Run(() => this.IndexOfAsync(item)).Result;
             }
-
-            return ret;
         }
 
         public Task<bool> ContainsAsync(T item)
         {
-            Task<bool> ret = null;
-
-            if (this.FuncContainsAsync != null)
-            {
-                ret = this.FuncContainsAsync.Invoke(item);
-            }
-
-            return ret;
+            return this.FuncContainsAsync?.Invoke(item);
         }
 
         public virtual Task<int> GetCountAsync()
         {
-            Task<int> ret = null;
-
-            if (this.FuncGetCountAsync != null)
-            {
-                ret = this.FuncGetCountAsync.Invoke();
-            }
-
-            return ret;
+            return this.FuncGetCountAsync?.Invoke();
         }
 
         public virtual Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder)
@@ -132,16 +115,12 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public virtual T GetPlaceHolder(int index, int page, int offset)
         {
-            var ret = default(T);
-
-            if (this.FuncGetPlaceHolder != null) ret = this.FuncGetPlaceHolder.Invoke(index, page, offset);
-
-            return ret;
+            return this.FuncGetPlaceHolder != null ? this.FuncGetPlaceHolder.Invoke(index, page, offset) : default(T);
         }
 
         public virtual async Task<int> IndexOfAsync(T item)
         {
-            return await Task.Run(() => -1); //TODO Why?
+            return await Task.FromResult(1);
         }
 
         public virtual void OnBeforeReset()

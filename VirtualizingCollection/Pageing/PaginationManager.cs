@@ -12,16 +12,6 @@ using AlphaChiTech.VirtualizingCollection.Interfaces;
 
 namespace AlphaChiTech.Virtualization.Pageing
 {
-    public interface IAsyncResetProvider
-    {
-        Task<int> GetCountAsync();
-    }
-
-    public interface IProviderPreReset
-    {
-        void OnBeforeReset();
-    }
-
     public class PaginationManager<T> : IItemSourceProvider<T>, INotifyImmediately, IEditableProvider<T>,
         IEditableProviderIndexBased<T>, IEditableProviderItemBased<T>, IReclaimableService,
         IAsyncResetProvider, IProviderPreReset, INotifyCountChanged, INotifyCollectionChanged,
@@ -34,16 +24,10 @@ namespace AlphaChiTech.Virtualization.Pageing
         private readonly Dictionary<int, CancellationTokenSource> _tasks =
             new Dictionary<int, CancellationTokenSource>();
 
-        protected object PageLock = new Object();
-
-        //protected object PageLock => this.Provider.SyncRoot;
-        //private object _addLock => this.Provider.SyncRoot;
+        protected object PageLock = new object();
         private int _basePage;
         private bool _hasGotCount;
 
-        private int _LastIndex = -1;
-
-        // The _LastXXX are used for optimizations..
         private int _localCount;
         private int _pageSize = 100;
 
@@ -81,7 +65,6 @@ namespace AlphaChiTech.Virtualization.Pageing
             {
                 this.Provider = provider;
             }
-
 
             this._reclaimer = reclaimer ?? new PageReclaimOnTouched<T>();
 
@@ -180,26 +163,20 @@ namespace AlphaChiTech.Virtualization.Pageing
         private int LocalCount
         {
             get => this._localCount;
-            set { this._localCount = value; }
+            set => this._localCount = value;
         }
 
         public async Task<int> GetCountAsync()
         {
-            var ret = 0;
-
-
+            this._hasGotCount = true;
             if (!this.IsAsync)
             {
-                ret = this.Provider.Count;
+                return this.Provider.Count;
             }
             else
             {
-                ret = await this.ProviderAsync.GetCountAsync();
+                return await this.ProviderAsync.GetCountAsync();
             }
-
-            this._hasGotCount = true;
-
-            return ret;
         }
 
         /// <summary>
@@ -214,8 +191,6 @@ namespace AlphaChiTech.Virtualization.Pageing
             {
                 this.DropAllDeltasAndPages();
             }
-
-            this.ClearOptimizations();
 
             if (count < 0)
             {
@@ -257,7 +232,6 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// </returns>
         public IEnumerator GetEnumerator()
         {
-            Debugger.Break();
             throw new NotImplementedException();
         }
 
@@ -278,12 +252,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
             }
 
-            if (!this.IsAsync)
-            {
-                return this.Provider.Contains(item);
-            }
-
-            return this.ProviderAsync.ContainsAsync(item).Result;
+            return !this.IsAsync ? this.Provider.Contains(item) : this.ProviderAsync.ContainsAsync(item).Result;
         }
 
         public T GetAt(int index, object voc, bool usePlaceholder = true)
@@ -299,31 +268,26 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// </value>
         public int GetCount(bool asyncOk)
         {
-            // return this.Provider.Count;
-            if (!this._hasGotCount)
+            if (this._hasGotCount) return this.LocalCount;
+
+            //TODO<-lock(this.SyncRoot)
+            lock (this)
             {
-                //TODO<-lock(this.SyncRoot)
-                lock (this)
+                if (!this.IsAsync)
                 {
-                    if (!this.IsAsync)
-                    {
-                        this.LocalCount = this.Provider.Count;
-                    }
-                    else if (!asyncOk)
-                    {
-                        //ret = this.ProviderAsync.Count;
-                        this.LocalCount = this.ProviderAsync.GetCountAsync().Result;
-                    }
-                    else
-                    {
-                        var cts = this.StartPageRequest(Int32.MinValue);
-                        this.GetCountAsync(cts);
-                    }
+                    this.LocalCount = this.Provider.Count;
                 }
-
-                this._hasGotCount = true;
+                else if (!asyncOk)
+                {
+                    this.LocalCount = this.ProviderAsync.GetCountAsync().Result;
+                }
+                else
+                {
+                    var cts = this.StartPageRequest(int.MinValue);
+                    this.GetCountAsync(cts);
+                }
             }
-
+            this._hasGotCount = true;
             return this.LocalCount;
         }
 
@@ -349,12 +313,8 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
             }
 
-            if (!this.IsAsync)
-            {
-                return this.Provider.IndexOf(item);
-            }
+            return !this.IsAsync ? this.Provider.IndexOf(item) : this.ProviderAsync.IndexOfAsync(item).Result;
 
-            return this.ProviderAsync.IndexOfAsync(item).Result;
             //return this.ProviderAsync.IndexOf(item);
         }
 
@@ -401,31 +361,21 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public void RunClaim(string sectionContext = "")
         {
-            if (this._reclaimer != null)
+            if (this._reclaimer == null) return;
+            lock (this.PageLock)
             {
-                var needed = 0;
+                var needed = Math.Max(0, this._pages.Count - this.MaxPages);
+                if (needed == 0) return;
+                var reclaimedPages = this._reclaimer.ReclaimPages(this._pages.Values, needed, sectionContext).ToList();
 
-                lock (this.PageLock)
+                foreach (var reclaimedPage in reclaimedPages)
                 {
-                    needed = Math.Max(0, this._pages.Count - this.MaxPages);
-                    if (needed != 0)
+                    if (reclaimedPage.Page == this._basePage) continue;
+                    lock (this._pages)
                     {
-                        var l = this._reclaimer.ReclaimPages(this._pages.Values, needed, sectionContext).ToList();
-
-                        foreach (var p in l)
-                        {
-                            if (p.Page != this._basePage)
-                            {
-                                lock (this._pages)
-                                {
-                                    if (this._pages.ContainsKey(p.Page))
-                                    {
-                                        this._pages.Remove(p.Page);
-                                        this._reclaimer.OnPageReleased(p);
-                                    }
-                                }
-                            }
-                        }
+                        if (!this._pages.ContainsKey(reclaimedPage.Page)) continue;
+                        this._pages.Remove(reclaimedPage.Page);
+                        this._reclaimer.OnPageReleased(reclaimedPage);
                     }
                 }
             }
@@ -482,10 +432,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         {
             var ret = default(T);
 
-            int page;
-            int offset;
-
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             var datapage = this.SafeGetPage(page, usePlaceholder, voc, index);
 
@@ -505,8 +452,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 //Thread.Sleep(100);
                 //return this.GetAt(index, voc, usePlaceholder, --nullTryCount);
             }
-
-            //Debug.WriteLine("Get at index:" + index + "returned:" + ret.ToString() + " page=" + page + " offset=" + offset);
+            
             return ret;
         }
 
@@ -518,50 +464,48 @@ namespace AlphaChiTech.Virtualization.Pageing
             inneroffset = (index + (this._basePage * this.PageSize)) - (page * this.PageSize);
 
             // We only need to do the rest if there have been modifications to the page sizes on pages (deltas)
-            if (this._deltas.Count > 0)
+            if (this._deltas.Count <= 0) return;
+
+            // Get the adjustment BEFORE checking for a short page, because we are going to adjust for that first..
+            var adjustment = 0;
+
+            lock (this.PageLock)
             {
-                // Get the adjustment BEFORE checking for a short page, because we are going to adjust for that first..
-                var adjustment = 0;
+                // First, get the total adjustments for any pages BEFORE the current page..
+                adjustment = (from d in this._deltas.Values
+                    where d.Page < basepage
+                    select d.Delta).Sum();
+            }
 
-                lock (this.PageLock)
+            // Now check to see if we are currently in a short page - in which case we need to adjust for that
+            if (this._deltas.ContainsKey(page))
+            {
+                var delta = this._deltas[page].Delta;
+
+                if (delta < 0)
                 {
-                    // First, get the total adjustments for any pages BEFORE the current page..
-                    adjustment = (from d in this._deltas.Values
-                        where d.Page < basepage
-                        select d.Delta).Sum();
-                }
-
-                // Now check to see if we are currently in a short page - in which case we need to adjust for that
-                if (this._deltas.ContainsKey(page))
-                {
-                    var delta = this._deltas[page].Delta;
-
-                    if (delta < 0)
+                    // In a short page, are we over the edge ?
+                    if (inneroffset >= this.PageSize + delta)
                     {
-                        // In a short page, are we over the edge ?
-                        if (inneroffset >= this.PageSize + delta)
-                        {
-                            var step = inneroffset - (this.PageSize + delta - 1);
-                            inneroffset -= step;
-                            this.DoStepForward(ref page, ref inneroffset, step);
-                        }
+                        var step = inneroffset - (this.PageSize + delta - 1);
+                        inneroffset -= step;
+                        this.DoStepForward(ref page, ref inneroffset, step);
                     }
                 }
+            }
 
-                // If we do have adjustments...
-                if (adjustment != 0)
-                {
-                    if (adjustment > 0)
-                    {
-                        // items have been added to earlier pages, so we need to step back
-                        this.DoStepBackwards(ref page, ref inneroffset, adjustment);
-                    }
-                    else
-                    {
-                        // items have been removed from earlier pages, so we need to step forward
-                        this.DoStepForward(ref page, ref inneroffset, Math.Abs(adjustment));
-                    }
-                }
+            // If we do have adjustments...
+            if (adjustment == 0) return;
+
+            if (adjustment > 0)
+            {
+                // items have been added to earlier pages, so we need to step back
+                this.DoStepBackwards(ref page, ref inneroffset, adjustment);
+            }
+            else
+            {
+                // items have been removed from earlier pages, so we need to step forward
+                this.DoStepForward(ref page, ref inneroffset, Math.Abs(adjustment));
             }
         }
 
@@ -569,12 +513,12 @@ namespace AlphaChiTech.Virtualization.Pageing
         {
             lock (this.PageLock)
             {
-                var c = this._tasks.Values.ToList();
-                foreach (var t in c)
+                var cancellationTokenSources = this._tasks.Values.ToList();
+                foreach (var cancellationTokenSource in cancellationTokenSources)
                 {
                     try
                     {
-                        t.Cancel(false);
+                        cancellationTokenSource.Cancel(false);
                     }
                     catch (Exception)
                     {
@@ -617,15 +561,6 @@ namespace AlphaChiTech.Virtualization.Pageing
         }
 
         /// <summary>
-        ///     Clears the optimizations.
-        /// </summary>
-        protected void ClearOptimizations()
-        {
-            this._LastIndex = -1;
-        }
-
-
-        /// <summary>
         ///     Drops all deltas and pages.
         /// </summary>
         protected void DropAllDeltasAndPages()
@@ -647,18 +582,15 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <exception cref="System.NotSupportedException"></exception>
         protected IEditableProvider<T> GetProviderAsEditable()
         {
-            IEditableProvider<T> ret = null;
 
             if (this.Provider != null)
             {
-                ret = this.Provider as IEditableProvider<T>;
+                return this.Provider as IEditableProvider<T>;
             }
             else
             {
-                ret = this.ProviderAsync as IEditableProvider<T>;
+                return this.ProviderAsync as IEditableProvider<T>;
             }
-
-            return ret;
         }
 
 
@@ -681,16 +613,14 @@ namespace AlphaChiTech.Virtualization.Pageing
         {
             lock (this.PageLock)
             {
-                if (this._tasks.ContainsKey(page))
+                if (!this._tasks.ContainsKey(page)) return;
+                try
                 {
-                    try
-                    {
-                        this._tasks.Remove(page);
-                    }
-                    catch (Exception)
-                    {
-                        Debugger.Break();
-                    }
+                    this._tasks.Remove(page);
+                }
+                catch (Exception)
+                {
+                    Debugger.Break();
                 }
             }
         }
@@ -698,7 +628,6 @@ namespace AlphaChiTech.Virtualization.Pageing
         protected CancellationTokenSource StartPageRequest(int page)
         {
             var cts = new CancellationTokenSource();
-
 
             this.CancelPageRequest(page);
 
@@ -733,7 +662,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                     var adj = (from a in this._deltas.Values
                         where a.Page >= targetPage && a.Page <= sourcePage
                         orderby a.Page
-                        select a);
+                        select a).ToArray();
                     if (!adj.Any())
                     {
                         page = targetPage;
@@ -761,34 +690,27 @@ namespace AlphaChiTech.Virtualization.Pageing
                     }
                 }
 
-                if (!done)
+                if (done) continue;
+
+                if (offset - stepAmount < 0)
                 {
+                    stepAmount -= (offset + 1);
+                    page--;
                     var items = this.PageSize;
                     if (this._deltas.ContainsKey(page))
                     {
                         items += this._deltas[page].Delta;
                     }
 
-                    if (offset - stepAmount < 0)
-                    {
-                        stepAmount -= (offset + 1);
-                        page--;
-                        items = this.PageSize;
-                        if (this._deltas.ContainsKey(page))
-                        {
-                            items += this._deltas[page].Delta;
-                        }
-
-                        offset = items - 1;
-                    }
-                    else
-                    {
-                        offset -= stepAmount;
-                        done = true;
-                    }
-
-                    ignoreSteps--;
+                    offset = items - 1;
                 }
+                else
+                {
+                    offset -= stepAmount;
+                    done = true;
+                }
+
+                ignoreSteps--;
             }
 
             // }
@@ -809,7 +731,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                     var adj = (from a in this._deltas.Values
                         where a.Page <= targetPage && a.Page >= sourcePage
                         orderby a.Page
-                        select a);
+                        select a).ToArray();
                     if (!adj.Any())
                     {
                         page = targetPage;
@@ -837,28 +759,27 @@ namespace AlphaChiTech.Virtualization.Pageing
                     }
                 }
 
-                if (!done)
+                if (done) continue;
+
+                var items = this.PageSize;
+                if (this._deltas.ContainsKey(page))
                 {
-                    var items = this.PageSize;
-                    if (this._deltas.ContainsKey(page))
-                    {
-                        items += this._deltas[page].Delta;
-                    }
-
-                    if (items <= offset + stepAmount)
-                    {
-                        stepAmount -= (items) - offset;
-                        offset = 0;
-                        page++;
-                    }
-                    else
-                    {
-                        offset += stepAmount;
-                        done = true;
-                    }
-
-                    ignoreSteps--;
+                    items += this._deltas[page].Delta;
                 }
+
+                if (items <= offset + stepAmount)
+                {
+                    stepAmount -= (items) - offset;
+                    offset = 0;
+                    page++;
+                }
+                else
+                {
+                    offset += stepAmount;
+                    done = true;
+                }
+
+                ignoreSteps--;
             }
 
             //}
@@ -920,7 +841,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
             }
 
-            this.RemovePageRequest(Int32.MinValue);
+            this.RemovePageRequest(int.MinValue);
         }
 
         private void OnProviderCollectionChanged(object sender,
@@ -933,12 +854,10 @@ namespace AlphaChiTech.Virtualization.Pageing
                 case NotifyCollectionChangedAction.Add:
                     foreach (var item in notifyCollectionChangedEventArgs.NewItems)
                     {
-                        var newItem = item as T;
-                        if (newItem != null)
-                        {
-                            this.AddNotificationsCount++;
-                            this.OnAppend(newItem, DateTime.Now, true, true);
-                        }
+                        if (!(item is T newItem)) continue;
+
+                        this.AddNotificationsCount++;
+                        this.OnAppend(newItem, DateTime.Now, true, true);
                     }
 
                     this.CollectionChanged?.Invoke(sender,
@@ -959,6 +878,7 @@ namespace AlphaChiTech.Virtualization.Pageing
 
                 case NotifyCollectionChangedAction.Replace: //TODO
                 case NotifyCollectionChangedAction.Move: //TODO
+                default:
                     break;
             }
 
@@ -973,16 +893,12 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// </summary>
         /// <param name="item">The item.</param>
         /// <param name="timestamp">The timestamp.</param>
+        /// <param name="isAlreadyInSourceCollection"></param>
+        /// <param name="createPageIfNotExist"></param>
         /// <returns></returns>
-        public int OnAppend(T item, object timestamp, bool isAlreadyInSourceCollection = false,
-            bool createPageIfNotExist = false)
+        public int OnAppend(T item, object timestamp, bool isAlreadyInSourceCollection = false, bool createPageIfNotExist = false)
         {
-            this.ClearOptimizations();
-
             var index = this.LocalCount;
-
-            int page;
-            int offset;
 
             if (!this._hasGotCount)
             {
@@ -996,7 +912,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
             }
 
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out _);
 
             if (this.IsPageWired(page))
             {
@@ -1020,22 +936,16 @@ namespace AlphaChiTech.Virtualization.Pageing
             }
             else if (createPageIfNotExist)
             {
-                var pageSize = 0;
-                var pageOffset = 0;
-
-                var dataPage = this.CreateNewPage(page, out pageSize, out pageOffset);
+                var dataPage = this.CreateNewPage(page, out _, out _);
                 dataPage.Append(item, timestamp, this.ExpiryComparer);
             }
 
             Interlocked.Increment(ref this._localCount);
 
-            this.ClearOptimizations();
-
             if (this.IsAsync)
             {
                 var test = this.GetAt(index, this, false);
             }
-
 
             var edit = this.GetProviderAsEditable();
             if (edit != null && !isAlreadyInSourceCollection)
@@ -1048,8 +958,6 @@ namespace AlphaChiTech.Virtualization.Pageing
                 var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
                 this.CollectionChanged?.Invoke(this, args);
             }
-
-            this.ClearOptimizations();
 
             return index;
         }
@@ -1075,9 +983,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
                 else
                 {
-                    int pageOffset;
-                    int pageSize;
-                    var newPage = this.CreateNewPage(page, out pageSize, out pageOffset);
+                    var newPage = this.CreateNewPage(page, out var pageSize, out var pageOffset);
 
                     if (!this.IsAsync)
                     {
@@ -1100,7 +1006,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                             ret = newPage;
 
                             var cts = this.StartPageRequest(newPage.Page);
-                            Task.Run(() => this.DoRealPageGet(voc, newPage, pageOffset, index, cts));
+                            Task.Run(() => this.DoRealPageGet(voc, newPage, pageOffset, index, cts), cts.Token).ConfigureAwait(false);
                         }
                         else
                         {
@@ -1136,10 +1042,8 @@ namespace AlphaChiTech.Virtualization.Pageing
             return newPage;
         }
 
-        private async Task DoRealPageGet(Object voc, ISourcePage<T> page, int pageOffset, int index,
-            CancellationTokenSource cts)
+        private async Task DoRealPageGet(object voc, ISourcePage<T> page, int pageOffset, int index, CancellationTokenSource cts)
         {
-            //Debug.WriteLine("DoRealPageGet: pageOffset=" + pageOffset + " index=" + index);
             var realVoc = (VirtualizingObservableCollection<T>) voc;
             var listOfReplaces = new List<PlaceholderReplaceWA<T>>();
 
@@ -1168,11 +1072,8 @@ namespace AlphaChiTech.Virtualization.Pageing
                         return;
                     }
 
-                    this.ClearOptimizations();
                     if (page.ReplaceNeeded(i))
                     {
-                        this.ClearOptimizations();
-
                         var oldItem = page.ReplaceAt(i, item, null, null);
                         listOfReplaces.Add(new PlaceholderReplaceWA<T>(realVoc, oldItem, item, pageOffset + i));
                     }
@@ -1188,7 +1089,6 @@ namespace AlphaChiTech.Virtualization.Pageing
 
             page.PageFetchState = PageFetchStateEnum.Fetched;
 
-            this.ClearOptimizations();
             foreach (var replace in listOfReplaces)
             {
                 if (cts.IsCancellationRequested)
@@ -1197,7 +1097,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                     return;
                 }
 
-                VirtualizationManager.Instance.RunOnUI(replace);
+                VirtualizationManager.Instance.RunOnUi(replace);
             }
 
             this.RemovePageRequest(page.Page);
@@ -1222,15 +1122,12 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public void OnInsert(int index, T item, object timestamp)
         {
-            int page;
-            int offset;
-
             if (!this._hasGotCount)
             {
                 this.EnsureCount();
             }
 
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             if (this.IsPageWired(page))
             {
@@ -1290,16 +1187,11 @@ namespace AlphaChiTech.Virtualization.Pageing
             }
 
             Interlocked.Increment(ref this._localCount);
-
-            this.ClearOptimizations();
         }
 
         public void OnReplace(int index, T oldItem, T newItem, object timestamp)
         {
-            int page;
-            int offset;
-
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             if (this.IsPageWired(page))
             {
@@ -1312,8 +1204,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 if (oldItem != default(T)) Debugger.Break();
             }
 
-            var editableProvider = this.Provider as IEditableProvider<T>;
-            if (editableProvider != null)
+            if (this.Provider is IEditableProvider<T> editableProvider)
             {
                 editableProvider.OnReplace(index, oldItem, newItem, timestamp);
             }
@@ -1336,6 +1227,7 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         #region Implementation of ICollection
 
+        /// <inheritdoc />
         /// <summary>
         ///     Copies the elements of the <see cref="T:System.Collections.ICollection" /> to an <see cref="T:System.Array" />,
         ///     starting at a particular <see cref="T:System.Array" /> index.
@@ -1360,6 +1252,7 @@ namespace AlphaChiTech.Virtualization.Pageing
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets the number of elements contained in the <see cref="T:System.Collections.ICollection" />.
         /// </summary>
@@ -1368,6 +1261,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// </returns>
         public int Count => this.GetCount(false);
 
+        /// <inheritdoc cref="" />
         /// <summary>
         ///     Gets an object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.
         /// </summary>
@@ -1393,8 +1287,6 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public T OnRemove(int index, object timestamp)
         {
-            int page;
-            int offset;
             T item;
 
             if (!this._hasGotCount)
@@ -1402,7 +1294,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 this.EnsureCount();
             }
 
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             if (this.IsPageWired(page))
             {
@@ -1432,8 +1324,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 var test = this.GetAt(index, this, false);
             }
 
-            var editableProvider = this.Provider as IEditableProviderIndexBased<T>;
-            if (editableProvider != null)
+            if (this.Provider is IEditableProviderIndexBased<T> editableProvider)
             {
                 item = editableProvider.OnRemove(index, timestamp);
             }
@@ -1446,18 +1337,14 @@ namespace AlphaChiTech.Virtualization.Pageing
 
             Interlocked.Decrement(ref this._localCount);
 
-            this.ClearOptimizations();
-
             return item;
         }
 
         public T OnReplace(int index, T newItem, object timestamp)
         {
-            int page;
-            int offset;
             T oldItem;
 
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             if (this.IsPageWired(page))
             {
@@ -1470,8 +1357,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 if (oldItem != default(T)) Debugger.Break();
             }
 
-            var editableProvider = this.Provider as IEditableProviderIndexBased<T>;
-            if (editableProvider != null)
+            if (this.Provider is IEditableProviderIndexBased<T> editableProvider)
             {
                 editableProvider.OnReplace(index, newItem, timestamp);
             }
@@ -1491,16 +1377,13 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public int OnRemove(T item, object timestamp)
         {
-            int page;
-            int offset;
-
             if (!this._hasGotCount)
             {
                 this.EnsureCount();
             }
 
             var index = this.Provider.IndexOf(item);
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             if (this.IsPageWired(page))
             {
@@ -1530,8 +1413,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                 var test = this.GetAt(index, this, false);
             }
 
-            var editableProvider = this.Provider as IEditableProviderItemBased<T>;
-            if (editableProvider != null)
+            if (this.Provider is IEditableProviderItemBased<T> editableProvider)
             {
                 editableProvider.OnRemove(item, timestamp);
             }
@@ -1543,18 +1425,14 @@ namespace AlphaChiTech.Virtualization.Pageing
 
             Interlocked.Decrement(ref this._localCount);
 
-            this.ClearOptimizations();
-
             return index;
         }
 
         public int OnReplace(T oldItem, T newItem, object timestamp)
         {
-            int page;
-            int offset;
             var index = this.Provider.IndexOf(oldItem);
 
-            this.CalculateFromIndex(index, out page, out offset);
+            this.CalculateFromIndex(index, out var page, out var offset);
 
             if (this.IsPageWired(page))
             {
@@ -1563,8 +1441,7 @@ namespace AlphaChiTech.Virtualization.Pageing
             }
 
 
-            var editableProvider = this.Provider as IEditableProviderItemBased<T>;
-            if (editableProvider != null)
+            if (this.Provider is IEditableProviderItemBased<T> editableProvider)
             {
                 editableProvider.OnReplace(oldItem, newItem, timestamp);
             }

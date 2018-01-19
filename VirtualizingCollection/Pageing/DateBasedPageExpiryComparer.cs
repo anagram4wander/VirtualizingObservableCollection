@@ -24,17 +24,10 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <returns></returns>
         public bool IsUpdateValid(object pageUpdateAt, object updateAt)
         {
-            var isStillValid = true;
+            if (pageUpdateAt == null || updateAt == null || !(pageUpdateAt is DateTime) || !(updateAt is DateTime))
+                return true;
 
-            if (pageUpdateAt != null && updateAt != null && pageUpdateAt is DateTime && updateAt is DateTime)
-            {
-                if (((DateTime) pageUpdateAt) >= ((DateTime) updateAt))
-                {
-                    isStillValid = false;
-                }
-            }
-
-            return isStillValid;
+            return ((DateTime) pageUpdateAt) < ((DateTime) updateAt);
         }
     }
 }

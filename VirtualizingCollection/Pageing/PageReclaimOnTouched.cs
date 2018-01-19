@@ -12,6 +12,7 @@ namespace AlphaChiTech.Virtualization.Pageing
     /// <typeparam name="T"></typeparam>
     public class PageReclaimOnTouched<T> : IPageReclaimer<T>
     {
+        /// <inheritdoc />
         /// <summary>
         ///     Makes the page.
         /// </summary>
@@ -23,6 +24,7 @@ namespace AlphaChiTech.Virtualization.Pageing
             return new SourcePage<T> {Page = page, ItemsPerPage = size};
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Called when [page released].
         /// </summary>
@@ -31,6 +33,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         {
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Called when [page touched].
         /// </summary>
@@ -40,6 +43,7 @@ namespace AlphaChiTech.Virtualization.Pageing
             page.LastTouch = DateTime.Now;
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Reclaims the pages.
         /// </summary>
@@ -50,13 +54,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         public IEnumerable<ISourcePage<T>> ReclaimPages(IEnumerable<ISourcePage<T>> pages, int pagesNeeded,
             string sectionContext)
         {
-            var ret = new List<ISourcePage<T>>();
-
-            var candiadates = (from p in pages where p.CanReclaimPage orderby p.LastTouch select p).Take(pagesNeeded);
-
-            foreach (var c in candiadates) ret.Add(c);
-
-            return ret;
+           return (from p in pages where p.CanReclaimPage orderby p.LastTouch select p).Take(pagesNeeded).ToList();
         }
     }
 }

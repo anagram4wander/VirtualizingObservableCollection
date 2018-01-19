@@ -51,7 +51,7 @@ namespace DataGridAsyncDemo
         //we’re using Dispatcher.Invoke to give the VirtualizationManager access
         //to the dispatcher thread, and using a DispatcherTimer to run the background
         //operations the VirtualizationManager needs to run to reclaim pages and manage memory.
-        VirtualizationManager.Instance.UIThreadExcecuteAction = a => Application.Current.Dispatcher.Invoke( a );
+        VirtualizationManager.Instance.UiThreadExcecuteAction = a => Application.Current.Dispatcher.Invoke( a );
         new DispatcherTimer( TimeSpan.FromMilliseconds( 10 ),
                              DispatcherPriority.Background,
                              delegate

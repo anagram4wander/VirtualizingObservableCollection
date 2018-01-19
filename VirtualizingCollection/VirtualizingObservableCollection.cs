@@ -16,50 +16,22 @@ namespace AlphaChiTech.Virtualization
     public class VirtualizingObservableCollection<T> : IEnumerable, IEnumerable<T>, ICollection, ICollection<T>, IList,
         IList<T>, IObservableCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged where T : class
     {
-        //#region IEnumerable Implementation
-        ///// <summary>
-        /////     Returns an enumerator that iterates through a collection.
-        ///// </summary>
-        ///// <returns>
-        /////     An <see cref="T:System.Collections.IEnumerator" /> object that can be used to iterate through the collection.
-        ///// </returns>
-        //IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-        //#endregion IEnumerable Implementation
-
-        //#region IEnumerable<T> Implementation
-        ///// <summary>
-        /////     Returns an enumerator that iterates through the collection.
-        ///// </summary>
-        ///// <returns>
-        /////     A <see cref="T:System.Collections.Generic.IEnumerator`1" /> that can be used to iterate through the collection.
-        ///// </returns>
-        //public IEnumerator<T> GetEnumerator()
-        //{
-        //    var sc = new Guid().ToString();
-
-        //    this.EnsureCountIsGotNonaSync();
-
-        //    var count = this.InternalGetCount();
-
-        //    for(var iLoop = 0; iLoop < count; iLoop++) { yield return this.InternalGetValue(iLoop, sc); }
-        //}
-        //#endregion IEnumerable<T> Implementation
-        //TODO Check enumerator implementation with the commeted out one
+        
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
         }
 
-        public IEnumerator<T> GetEnumerator() => new Enumerator<T>(this);
+        public IEnumerator<T> GetEnumerator() => new VirtualizingObservableCollectionEnumerator<T>(this);
 
-        public class Enumerator<TT> : IEnumerator<TT> where TT : class
+        public class VirtualizingObservableCollectionEnumerator<TT> : IEnumerator<TT> where TT : class
         {
-            private int iLoop;
+            private int _iLoop;
 
             /// <summary>
             ///     Initializes a new instance of the <see cref="T:System.Object" /> class.
             /// </summary>
-            public Enumerator(VirtualizingObservableCollection<TT> baseCollection)
+            public VirtualizingObservableCollectionEnumerator(VirtualizingObservableCollection<TT> baseCollection)
             {
                 this.BaseCollection = baseCollection;
             }
@@ -81,28 +53,16 @@ namespace AlphaChiTech.Virtualization
                 var sc = new Guid().ToString();
 
                 this.BaseCollection.EnsureCountIsGotNonaSync();
-
-                //lock(this.BaseCollection.SyncRoot) {
-                //    var count = this.BaseCollection.InternalGetCount();
-                //    if(this.iLoop < count)
-                //    {
-                //        this.Current = this.BaseCollection.InternalGetValue(this.iLoop++, sc);
-                //        return true;
-                //    }
-                //    return false;
-                //}
-
+                
                 try
                 {
                     var count = this.BaseCollection.InternalGetCount();
-                    if (this.iLoop < count)
-                    {
-                        this.Current = this.BaseCollection.InternalGetValue(this.iLoop++, sc);
-                        if (this.Current == null) Debugger.Break();
-                        return true;
-                    }
+                    if (this._iLoop >= count) return false;
 
-                    return false;
+                    this.Current = this.BaseCollection.InternalGetValue(this._iLoop++, sc);
+                    if (this.Current == null) Debugger.Break();
+                    return true;
+
                 }
                 catch (Exception)
                 {
@@ -112,10 +72,11 @@ namespace AlphaChiTech.Virtualization
 
             public void Reset()
             {
-                this.iLoop = 0;
+                this._iLoop = 0;
                 this.Current = null;
             }
 
+            /// <inheritdoc />
             /// <summary>
             ///     Gets the element in the collection at the current position of the enumerator.
             /// </summary>
@@ -194,7 +155,7 @@ namespace AlphaChiTech.Virtualization
         {
             this.Provider = new PaginationManager<T>(provider, reclaimer, expiryComparer, pageSize, maxPages, maxDeltas,
                 maxDistance);
-            (this.Provider as PaginationManager<T>).CollectionChanged +=
+            ((PaginationManager<T>) this.Provider).CollectionChanged +=
                 this.VirtualizingObservableCollection_CollectionChanged;
             this.IsSourceObservable = true;
         }
@@ -205,8 +166,8 @@ namespace AlphaChiTech.Virtualization
         protected VirtualizingObservableCollection()
         {
             //To enable reset in case that noone set UiThreadExcecuteAction
-            if (VirtualizationManager.Instance.UIThreadExcecuteAction == null)
-                VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.CurrentDispatcher.Invoke(a);
+            if (VirtualizationManager.Instance.UiThreadExcecuteAction == null)
+                VirtualizationManager.Instance.UiThreadExcecuteAction = a => Dispatcher.CurrentDispatcher.Invoke(a);
         }
 
         #endregion Ctors Etc
@@ -219,12 +180,14 @@ namespace AlphaChiTech.Virtualization
             throw new NotImplementedException();
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets the number of elements contained in the <see cref="T:System.Collections.ICollection" />.
         /// </summary>
         /// <returns>The number of elements contained in the <see cref="T:System.Collections.ICollection" />.</returns>
         public int Count => this.InternalGetCount();
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets a value indicating whether access to the <see cref="T:System.Collections.ICollection" /> is synchronized
         ///     (thread safe).
@@ -235,6 +198,7 @@ namespace AlphaChiTech.Virtualization
         /// </returns>
         public bool IsSynchronized => false;
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets an object that can be used to synchronize access to the <see cref="T:System.Collections.ICollection" />.
         /// </summary>
@@ -254,6 +218,7 @@ namespace AlphaChiTech.Virtualization
             this.InternalAdd(item, null);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Resets the collection - aka forces a get all data, including the count
         ///     <see cref="T:System.Collections.Generic.ICollection`1" />.
@@ -263,6 +228,7 @@ namespace AlphaChiTech.Virtualization
             this.InternalClear();
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Determines whether the <see cref="T:System.Collections.Generic.ICollection`1" /> contains a specific value.
         /// </summary>
@@ -284,12 +250,14 @@ namespace AlphaChiTech.Virtualization
             }
         }
 
+        /// <inheritdoc cref="" />
         /// <summary>
         ///     Gets a value indicating whether the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only.
         /// </summary>
         /// <returns>true if the <see cref="T:System.Collections.Generic.ICollection`1" /> is read-only; otherwise, false.</returns>
         public bool IsReadOnly => false;
 
+        /// <inheritdoc />
         /// <summary>
         ///     Removes the first occurrence of a specific object from the
         ///     <see cref="T:System.Collections.Generic.ICollection`1" />.
@@ -374,16 +342,13 @@ namespace AlphaChiTech.Virtualization
             {
                 items.Add(item);
                 index = edit.OnAppend(item, timestamp);
-                if (!this.IsSourceObservable)
-                {
-                    var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
-                    this.RaiseCollectionChangedEvent(args);
-                }
+                if (this.IsSourceObservable) continue;
+
+                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index);
+                this.RaiseCollectionChangedEvent(args);
             }
 
-
             this.OnCountTouched();
-
 
             return index;
         }
@@ -392,6 +357,7 @@ namespace AlphaChiTech.Virtualization
 
         #region IList Implementation
 
+        /// <inheritdoc />
         /// <summary>
         ///     Adds an item to the <see cref="T:System.Collections.IList" />.
         /// </summary>
@@ -407,14 +373,17 @@ namespace AlphaChiTech.Virtualization
 
         bool IObservableCollection<T>.Remove(object item)
         {
-            throw new NotImplementedException();
+            this.Remove(item);
+            return true;
         }
 
         bool IObservableCollection.Remove(object item)
         {
-            throw new NotImplementedException();
+            this.Remove(item);
+            return true;
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Determines whether the <see cref="T:System.Collections.IList" /> contains a specific value.
         /// </summary>
@@ -425,10 +394,10 @@ namespace AlphaChiTech.Virtualization
         /// </returns>
         public bool Contains(object value)
         {
-            if (value == null) return false; //some UI asked for null... wtf
-            return this.Contains((T) value);
+            return value != null && this.Contains((T) value);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Determines the index of a specific item in the <see cref="T:System.Collections.IList" />.
         /// </summary>
@@ -441,6 +410,7 @@ namespace AlphaChiTech.Virtualization
             return this.IndexOf((T) value);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Inserts an item to the <see cref="T:System.Collections.IList" /> at the specified index.
         /// </summary>
@@ -451,6 +421,7 @@ namespace AlphaChiTech.Virtualization
             this.Insert(index, (T) value);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets a value indicating whether the <see cref="T:System.Collections.IList" /> has a fixed size.
         /// </summary>
@@ -462,6 +433,7 @@ namespace AlphaChiTech.Virtualization
             this.Add(item);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Removes the first occurrence of a specific object from the <see cref="T:System.Collections.IList" />.
         /// </summary>
@@ -471,6 +443,7 @@ namespace AlphaChiTech.Virtualization
             this.Remove((T) value);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Removes the <see cref="T:System.Collections.IList" /> item at the specified index.
         /// </summary>
@@ -480,6 +453,7 @@ namespace AlphaChiTech.Virtualization
             this.InternalRemoveAt(index);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets or sets the element at the specified index.
         /// </summary>
@@ -495,6 +469,7 @@ namespace AlphaChiTech.Virtualization
 
         #region IList<T> Implementation
 
+        /// <inheritdoc />
         /// <summary>
         ///     Determines the index of a specific item in the <see cref="T:System.Collections.Generic.IList`1" />.
         /// </summary>
@@ -507,6 +482,7 @@ namespace AlphaChiTech.Virtualization
             return this.InternalIndexOf(item);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Inserts an item to the <see cref="T:System.Collections.Generic.IList`1" /> at the specified index.
         /// </summary>
@@ -517,6 +493,7 @@ namespace AlphaChiTech.Virtualization
             this.InternalInsertAt(index, item);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     Gets or sets the element at the specified index.
         /// </summary>
@@ -558,7 +535,7 @@ namespace AlphaChiTech.Virtualization
             if (args.NeedsReset)
             {
                 // Send a reset..
-                this.RaiseCollectionChangedEvent(_ccResetArgs);
+                this.RaiseCollectionChangedEvent(CcResetArgs);
             }
 
             this.OnCountTouched();
@@ -578,9 +555,9 @@ namespace AlphaChiTech.Virtualization
                 this.ClearCountChangedHooks();
                 this._provider = value;
 
-                if (this._provider is INotifyCountChanged)
+                if (this._provider is INotifyCountChanged changed)
                 {
-                    (this._provider as INotifyCountChanged).CountChanged +=
+                    changed.CountChanged +=
                         this.VirtualizingObservableCollection_CountChanged;
                 } //TODO check this commented code
 
@@ -599,9 +576,9 @@ namespace AlphaChiTech.Virtualization
 
         private void ClearCountChangedHooks()
         {
-            if (this._provider is INotifyCountChanged)
+            if (this._provider is INotifyCountChanged changed)
             {
-                (this._provider as INotifyCountChanged).CountChanged -=
+                changed.CountChanged -=
                     this.VirtualizingObservableCollection_CountChanged;
             }
 
@@ -625,8 +602,7 @@ namespace AlphaChiTech.Virtualization
         #region INotifyCollectionChanged Implementation
 
         public bool SupressEventErrors { get; set; } = false;
-
-        //TODO check this code
+        
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         event NotifyCollectionChangedEventHandler INotifyCollectionChanged.CollectionChanged
@@ -639,7 +615,6 @@ namespace AlphaChiTech.Virtualization
         ///     Raises the collection changed event.
         /// </summary>
         /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs" /> instance containing the event data.</param>
-        /// //todo check
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
             if (this._bulkCount > 0)
@@ -697,14 +672,14 @@ namespace AlphaChiTech.Virtualization
             remove => this.PropertyChanged -= value;
         }
 
-        private static readonly PropertyChangedEventArgs _pcCountArgs = new PropertyChangedEventArgs("Count");
+        private static readonly PropertyChangedEventArgs PcCountArgs = new PropertyChangedEventArgs("Count");
 
-        private static readonly NotifyCollectionChangedEventArgs _ccResetArgs =
+        private static readonly NotifyCollectionChangedEventArgs CcResetArgs =
             new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset);
 
         private void OnCountTouched()
         {
-            this.RaisePropertyChanged(_pcCountArgs);
+            this.RaisePropertyChanged(PcCountArgs);
         }
 
         protected void RaisePropertyChanged(PropertyChangedEventArgs args)
@@ -732,11 +707,10 @@ namespace AlphaChiTech.Virtualization
                 this._bulkCount--;
             }
 
-            if (this._bulkCount == 0)
-            {
-                this.RaiseCollectionChangedEvent(_ccResetArgs);
-                this.RaisePropertyChanged(_pcCountArgs);
-            }
+            if (this._bulkCount != 0) return;
+
+            this.RaiseCollectionChangedEvent(CcResetArgs);
+            this.RaisePropertyChanged(PcCountArgs);
         }
 
         /// <summary>
@@ -750,6 +724,7 @@ namespace AlphaChiTech.Virtualization
             return new BulkMode(this);
         }
 
+        /// <inheritdoc />
         /// <summary>
         ///     The Bulk mode IDisposable proxy
         /// </summary>
@@ -770,14 +745,10 @@ namespace AlphaChiTech.Virtualization
 
             private void OnDispose()
             {
-                if (!this._isDisposed)
-                {
-                    this._isDisposed = true;
-                    if (this._voc != null)
-                    {
-                        this._voc.ReleaseBulkMode();
-                    }
-                }
+                if (this._isDisposed) return;
+
+                this._isDisposed = true;
+                this._voc?.ReleaseBulkMode();
             }
 
             ~BulkMode()
@@ -790,7 +761,7 @@ namespace AlphaChiTech.Virtualization
 
         #region Private Properties
 
-        protected String DefaultSelectionContext = new Guid().ToString();
+        protected string DefaultSelectionContext = new Guid().ToString();
         private IItemSourceProvider<T> _provider;
         private IItemSourceProviderAsync<T> _providerAsync;
         private int _bulkCount;
@@ -836,27 +807,20 @@ namespace AlphaChiTech.Virtualization
         {
             var edit = this.GetProviderAsEditable();
 
-            if (edit != null)
-            {
-                edit.OnReplace(index, oldValue, newValue, timestamp);
+            if (edit == null) return;
+            edit.OnReplace(index, oldValue, newValue, timestamp);
 
-                if (!this.IsSourceObservable)
-                {
-                    var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newValue,
-                        oldValue, index);
-                    this.RaiseCollectionChangedEvent(args);
-                }
-            }
+            if (this.IsSourceObservable) return;
+            var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newValue,
+                oldValue, index);
+            this.RaiseCollectionChangedEvent(args);
         }
 
         private void InternalClear()
         {
             if (this.Provider != null)
             {
-                if (this.Provider is IProviderPreReset)
-                {
-                    (this.Provider as IProviderPreReset).OnBeforeReset();
-                }
+                (this.Provider as IProviderPreReset)?.OnBeforeReset();
 
                 this.Provider.OnReset(-1);
             }
@@ -895,9 +859,9 @@ namespace AlphaChiTech.Virtualization
 
             if (this.Provider != null)
             {
-                if (this.Provider is IProviderPreReset)
+                if (this.Provider is IProviderPreReset reset)
                 {
-                    (this.Provider as IProviderPreReset).OnBeforeReset();
+                    reset.OnBeforeReset();
                     if (cts.IsCancellationRequested)
                     {
                         return;
@@ -908,12 +872,12 @@ namespace AlphaChiTech.Virtualization
 
                 await Task.Run(async () =>
                 {
-                    if (this.Provider is IAsyncResetProvider)
+                    if (this.Provider is IAsyncResetProvider provider)
                     {
-                        var count = await (this.Provider as IAsyncResetProvider).GetCountAsync();
+                        var count = await provider.GetCountAsync();
                         if (!cts.IsCancellationRequested)
                         {
-                            VirtualizationManager.Instance.RunOnUI(() =>
+                            VirtualizationManager.Instance.RunOnUi(() =>
                                 this.Provider.OnReset(count));
                         }
                     }
@@ -922,11 +886,11 @@ namespace AlphaChiTech.Virtualization
                         var count = this.Provider.GetCount(false);
                         if (!cts.IsCancellationRequested)
                         {
-                            VirtualizationManager.Instance.RunOnUI(() =>
+                            VirtualizationManager.Instance.RunOnUi(() =>
                                 this.Provider.OnReset(count));
                         }
                     }
-                });
+                }, cts.Token);
             }
             else
             {
@@ -949,14 +913,9 @@ namespace AlphaChiTech.Virtualization
 
         private T InternalGetValue(int index, string selectionContext)
         {
-            bool allowPlaceholder = selectionContext == this.DefaultSelectionContext;
+            var allowPlaceholder = selectionContext == this.DefaultSelectionContext;
 
-            if (this.Provider != null)
-            {
-                return this.Provider.GetAt(index, this, allowPlaceholder);
-            }
-
-            return Task.Run(() => this.ProviderAsync.GetAt(index, this, allowPlaceholder)).Result;
+            return this.Provider != null ? this.Provider.GetAt(index, this, allowPlaceholder) : this.ProviderAsync.GetAt(index, this, allowPlaceholder).Result;
         }
 
         private T InternalSetValue(int index, T newValue)
@@ -968,12 +927,11 @@ namespace AlphaChiTech.Virtualization
             var newItems = new List<T> {newValue};
             var oldItems = new List<T> {oldValue};
 
-            if (!this.IsSourceObservable)
-            {
-                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems,
-                    oldItems, index);
-                this.RaiseCollectionChangedEvent(args);
-            }
+            if (this.IsSourceObservable) return oldValue;
+
+            var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, newItems,
+                oldItems, index);
+            this.RaiseCollectionChangedEvent(args);
 
             return oldValue;
         }
@@ -984,11 +942,10 @@ namespace AlphaChiTech.Virtualization
             var index = edit.OnAppend(newValue, timestamp);
             this.OnCountTouched();
 
-            if (!this.IsSourceObservable)
-            {
-                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, index);
-                this.RaiseCollectionChangedEvent(args);
-            }
+            if (this.IsSourceObservable) return index;
+
+            var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, newValue, index);
+            this.RaiseCollectionChangedEvent(args);
 
             return index;
         }
@@ -997,15 +954,7 @@ namespace AlphaChiTech.Virtualization
         {
             var ret = 0;
 
-            if (this.Provider != null)
-            {
-                ret = this.Provider.GetCount(true);
-            }
-            else
-            {
-                ret = Task.Run(() => this.ProviderAsync.Count).Result;
-            }
-
+            ret = this.Provider?.GetCount(true) ?? this.ProviderAsync.Count.Result;
 
             return ret;
         }
@@ -1026,18 +975,16 @@ namespace AlphaChiTech.Virtualization
 
         private bool InternalRemoveAt(int index, object timestamp = null)
         {
-            var edit = this.Provider as IEditableProviderIndexBased<T>;
-            if (edit == null) return false;
+            if (!(this.Provider is IEditableProviderIndexBased<T> edit)) return false;
 
             var oldValue = edit.OnRemove(index, timestamp);
 
             this.OnCountTouched();
 
-            if (!this.IsSourceObservable)
-            {
-                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
-                this.RaiseCollectionChangedEvent(args);
-            }
+            if (this.IsSourceObservable) return true;
+
+            var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, oldValue, index);
+            this.RaiseCollectionChangedEvent(args);
 
             return true;
         }
@@ -1049,17 +996,15 @@ namespace AlphaChiTech.Virtualization
                 return false;
             }
 
-            var edit = this.Provider as IEditableProviderItemBased<T>;
-            if (edit == null)
+            if (!(this.Provider is IEditableProviderItemBased<T> edit))
                 return false;
             var index = edit.OnRemove(item, timestamp);
             this.OnCountTouched();
 
-            if (!this.IsSourceObservable)
-            {
-                var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index);
-                this.RaiseCollectionChangedEvent(args);
-            }
+            if (this.IsSourceObservable) return true;
+
+            var args = new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item, index);
+            this.RaiseCollectionChangedEvent(args);
 
             return true;
         }

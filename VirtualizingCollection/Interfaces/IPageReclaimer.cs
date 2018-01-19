@@ -29,8 +29,8 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
         /// </summary>
         /// <param name="pages">The pages.</param>
         /// <param name="pagesNeeded">The pages needed.</param>
+        /// <param name="sectionContext"></param>
         /// <returns></returns>
-        IEnumerable<ISourcePage<T>> ReclaimPages(IEnumerable<ISourcePage<T>> pages, int pagesNeeded,
-            string sectionContext);
+        IEnumerable<ISourcePage<T>> ReclaimPages(IEnumerable<ISourcePage<T>> pages, int pagesNeeded, string sectionContext);
     }
 }

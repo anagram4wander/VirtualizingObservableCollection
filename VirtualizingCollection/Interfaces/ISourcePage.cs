@@ -1,16 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using AlphaChiTech.Virtualization.Pageing;
 
 namespace AlphaChiTech.VirtualizingCollection.Interfaces
 {
-    public class SourcePagePendingUpdates
-    {
-        public INotifyCollectionChanged Args { get; set; }
-        public Object UpdatedAt { get; set; }
-    }
-
     public interface ISourcePage<T>
     {
         bool CanReclaimPage { get; }
@@ -19,14 +12,14 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
 
         int ItemsPerPage { get; set; }
 
-        Object LastTouch { get; set; }
+        object LastTouch { get; set; }
         int Page { get; set; }
 
         PageFetchStateEnum PageFetchState { get; set; }
 
         List<SourcePagePendingUpdates> PendingUpdates { get; }
 
-        Object WiredDateTime { get; set; }
+        object WiredDateTime { get; set; }
 
         int Append(T item, object updatedAt, IPageExpiryComparer comparer);
 

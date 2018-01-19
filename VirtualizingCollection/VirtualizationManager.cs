@@ -9,33 +9,33 @@ namespace AlphaChiTech.VirtualizingCollection
 {
     public class VirtualizationManager
     {
-        private object _ActionLock = new object();
+        private readonly object _actionLock = new object();
 
-        private List<IVirtualizationAction> _Actions = new List<IVirtualizationAction>();
+        private readonly List<IVirtualizationAction> _actions = new List<IVirtualizationAction>();
 
-        bool _Processing;
+        private bool _processing;
 
-        private Action<Action> _UIThreadExcecuteAction;
+        private Action<Action> _uiThreadExcecuteAction;
 
         public static VirtualizationManager Instance { get; } = new VirtualizationManager();
 
         public static bool IsInitialized { get; private set; }
 
-        public Action<Action> UIThreadExcecuteAction
+        public Action<Action> UiThreadExcecuteAction
         {
-            get { return this._UIThreadExcecuteAction; }
+            get => this._uiThreadExcecuteAction;
             set
             {
-                this._UIThreadExcecuteAction = value;
+                this._uiThreadExcecuteAction = value;
                 IsInitialized = true;
             }
         }
 
         public void AddAction(IVirtualizationAction action)
         {
-            lock (this._ActionLock)
+            lock (this._actionLock)
             {
-                this._Actions.Add(action);
+                this._actions.Add(action);
             }
         }
 
@@ -46,74 +46,72 @@ namespace AlphaChiTech.VirtualizingCollection
 
         public void ProcessActions()
         {
-            if (this._Processing) return;
+            if (this._processing) return;
 
-            this._Processing = true;
+            this._processing = true;
 
             List<IVirtualizationAction> lst;
-            lock (this._ActionLock)
+            lock (this._actionLock)
             {
-                lst = this._Actions.ToList();
+                lst = this._actions.ToList();
             }
 
             foreach (var action in lst)
             {
-                bool bdo = true;
+                var bdo = true;
 
                 if (action is IRepeatingVirtualizationAction)
                 {
                     bdo = (action as IRepeatingVirtualizationAction).IsDueToRun();
                 }
 
-                if (bdo)
+                if (!bdo) continue;
+                switch (action.ThreadModel)
                 {
-                    switch (action.ThreadModel)
-                    {
-                        case VirtualActionThreadModelEnum.UseUIThread:
-                            if (this.UIThreadExcecuteAction == null) // PLV
-                                throw new Exception(
-                                    "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)");
-                            this.UIThreadExcecuteAction.Invoke(() => action.DoAction());
-                            break;
-                        case VirtualActionThreadModelEnum.Background:
-                            Task.Run(() => action.DoAction());
-                            break;
-                    }
+                    case VirtualActionThreadModelEnum.UseUIThread:
+                        if (this.UiThreadExcecuteAction == null) // PLV
+                            throw new Exception(
+                                "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)");
+                        this.UiThreadExcecuteAction.Invoke(() => action.DoAction());
+                        break;
+                    case VirtualActionThreadModelEnum.Background:
+                        Task.Run(() => action.DoAction()).ConfigureAwait(false);
+                        break;
+                    default:
+                        break;
+                }
 
-                    if (action is IRepeatingVirtualizationAction)
+                if (action is IRepeatingVirtualizationAction)
+                {
+                    if ((action as IRepeatingVirtualizationAction).KeepInActionsList()) continue;
+                    lock (this._actionLock)
                     {
-                        if (!(action as IRepeatingVirtualizationAction).KeepInActionsList())
-                        {
-                            lock (this._ActionLock)
-                            {
-                                this._Actions.Remove(action);
-                            }
-                        }
+                        this._actions.Remove(action);
                     }
-                    else
+                }
+                else
+                {
+                    lock (this._actionLock)
                     {
-                        lock (this._ActionLock)
-                        {
-                            this._Actions.Remove(action);
-                        }
+                        this._actions.Remove(action);
                     }
                 }
             }
 
-            this._Processing = false;
+            this._processing = false;
         }
 
-        public void RunOnUI(IVirtualizationAction action)
+        public void RunOnUi(IVirtualizationAction action)
         {
-            if (this.UIThreadExcecuteAction == null) // PLV
+            if (this.UiThreadExcecuteAction == null) // PLV
                 throw new Exception(
                     "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)");
-            this.UIThreadExcecuteAction.Invoke(() => action.DoAction());
+            this.UiThreadExcecuteAction.Invoke(action.DoAction);
         }
 
-        public void RunOnUI(Action action)
+        public void RunOnUi(Action action)
         {
-            this.RunOnUI(new ActionVirtualizationWrapper(action));
+            this.RunOnUi(new ActionVirtualizationWrapper(action));
         }
     }
 }

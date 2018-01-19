@@ -13,6 +13,8 @@ namespace AlphaChiTech.Virtualization.Pageing
         ///     Appends the specified item.
         /// </summary>
         /// <param name="item">The item.</param>
+        /// <param name="updatedAt"></param>
+        /// <param name="comparer"></param>
         /// <returns></returns>
         public int Append(T item, object updatedAt, IPageExpiryComparer comparer)
         {
@@ -68,18 +70,18 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <param name="offset">The offset.</param>
         /// <param name="item">The item.</param>
         /// <param name="updatedAt">The updated at.</param>
+        /// <param name="comparer"></param>
         public void InsertAt(int offset, T item, object updatedAt, IPageExpiryComparer comparer)
         {
-            if (this.IsSafeToUpdate(comparer, updatedAt))
+            if (!this.IsSafeToUpdate(comparer, updatedAt)) return;
+
+            if (this.Items.Count > offset)
             {
-                if (this.Items.Count > offset)
-                {
-                    this.Items.Insert(offset, item);
-                }
-                else
-                {
-                    this.Items.Add(item);
-                }
+                this.Items.Insert(offset, item);
+            }
+            else
+            {
+                this.Items.Add(item);
             }
         }
 
@@ -99,7 +101,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <value>
         ///     The last touch.
         /// </value>
-        public Object LastTouch { get; set; }
+        public object LastTouch { get; set; }
 
 
         /// <summary>
@@ -125,17 +127,16 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// </summary>
         /// <param name="offset">The offset.</param>
         /// <param name="updatedAt">The updated at.</param>
+        /// <param name="comparer"></param>
         /// <returns></returns>
         public bool RemoveAt(int offset, object updatedAt, IPageExpiryComparer comparer)
         {
-            var removed = true;
-
             if (this.IsSafeToUpdate(comparer, updatedAt))
             {
                 this.Items.RemoveAt(offset);
             }
 
-            return removed;
+            return true;
         }
 
 
@@ -145,6 +146,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <param name="offset">The offset.</param>
         /// <param name="newValue">The new value.</param>
         /// <param name="updatedAt">The updated at.</param>
+        /// <param name="comparer"></param>
         public T ReplaceAt(int offset, T newValue, object updatedAt, IPageExpiryComparer comparer)
         {
             var oldValue = this.Items[offset];
@@ -164,6 +166,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <param name="oldValue">The old value.</param>
         /// <param name="newValue">The new value.</param>
         /// <param name="updatedAt">The updated at.</param>
+        /// <param name="comparer"></param>
         public T ReplaceAt(T oldValue, T newValue, object updatedAt, IPageExpiryComparer comparer)
         {
             if (!this.IsSafeToUpdate(comparer, updatedAt))
@@ -192,18 +195,12 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <summary>
         ///     Determines whether it is safe to update into a page where the pending update was generated at a given time.
         /// </summary>
+        /// <param name="comparer"></param>
         /// <param name="updatedAt">The updated happened at this datetime.</param>
         /// <returns></returns>
         public bool IsSafeToUpdate(IPageExpiryComparer comparer, object updatedAt)
         {
-            var ret = true;
-
-            if (comparer != null)
-            {
-                ret = comparer.IsUpdateValid(this.WiredDateTime, updatedAt);
-            }
-
-            return ret;
+            return comparer == null || comparer.IsUpdateValid(this.WiredDateTime, updatedAt);
         }
     }
 }

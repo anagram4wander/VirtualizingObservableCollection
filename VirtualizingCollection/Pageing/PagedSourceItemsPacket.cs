@@ -7,6 +7,6 @@ namespace AlphaChiTech.Virtualization.Pageing
     {
         public IEnumerable<T> Items { get; set; }
 
-        public Object LoadedAt { get; set; } = DateTime.Now;
+        public object LoadedAt { get; set; } = DateTime.Now;
     }
 }
