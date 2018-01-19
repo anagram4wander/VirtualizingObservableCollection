@@ -2,7 +2,7 @@
 {
     public interface IRepeatingVirtualizationAction
     {
-        bool KeepInActionsList();
         bool IsDueToRun();
+        bool KeepInActionsList();
     }
 }

@@ -9,32 +9,17 @@ namespace AlphaChiTech.VirtualizingCollection
 {
     public class VirtualizationManager
     {
-        private static VirtualizationManager _Instance = new VirtualizationManager();
-
-        private List<IVirtualizationAction> _Actions = new List<IVirtualizationAction>();
         private object _ActionLock = new object();
 
-        private static bool _IsInitialized = false;
+        private List<IVirtualizationAction> _Actions = new List<IVirtualizationAction>();
 
-        public static bool IsInitialized
-        {
-            get
-            {
-                return _IsInitialized;
-            }
-        }
+        bool _Processing;
 
-        public static VirtualizationManager Instance
-        {
-            get
-            {
-                return _Instance;
-            }
-        }
+        private Action<Action> _UIThreadExcecuteAction;
 
-        bool _Processing = false;
+        public static VirtualizationManager Instance { get; } = new VirtualizationManager();
 
-        private Action<Action> _UIThreadExcecuteAction = null;
+        public static bool IsInitialized { get; private set; }
 
         public Action<Action> UIThreadExcecuteAction
         {
@@ -42,8 +27,21 @@ namespace AlphaChiTech.VirtualizingCollection
             set
             {
                 this._UIThreadExcecuteAction = value;
-                _IsInitialized = true;
+                IsInitialized = true;
             }
+        }
+
+        public void AddAction(IVirtualizationAction action)
+        {
+            lock (this._ActionLock)
+            {
+                this._Actions.Add(action);
+            }
+        }
+
+        public void AddAction(Action action)
+        {
+            this.AddAction(new ActionVirtualizationWrapper(action));
         }
 
         public void ProcessActions()
@@ -73,7 +71,8 @@ namespace AlphaChiTech.VirtualizingCollection
                     {
                         case VirtualActionThreadModelEnum.UseUIThread:
                             if (this.UIThreadExcecuteAction == null) // PLV
-                              throw new Exception( "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)" );
+                                throw new Exception(
+                                    "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)");
                             this.UIThreadExcecuteAction.Invoke(() => action.DoAction());
                             break;
                         case VirtualActionThreadModelEnum.Background:
@@ -103,23 +102,12 @@ namespace AlphaChiTech.VirtualizingCollection
 
             this._Processing = false;
         }
-        public void AddAction(IVirtualizationAction action)
-        {
-            lock (this._ActionLock)
-            {
-                this._Actions.Add(action);
-            }
-        }
-
-        public void AddAction(Action action)
-        {
-            this.AddAction(new ActionVirtualizationWrapper(action));
-        }
 
         public void RunOnUI(IVirtualizationAction action)
         {
             if (this.UIThreadExcecuteAction == null) // PLV
-               throw new Exception( "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)" );
+                throw new Exception(
+                    "VirtualizationManager isn’t already initialized !  set the VirtualizationManager’s UIThreadExcecuteAction (VirtualizationManager.Instance.UIThreadExcecuteAction = a => Dispatcher.Invoke( a );)");
             this.UIThreadExcecuteAction.Invoke(() => action.DoAction());
         }
 

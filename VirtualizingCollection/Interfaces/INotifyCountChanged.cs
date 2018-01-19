@@ -6,8 +6,8 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
 
     public class CountChangedEventArgs : EventArgs
     {
-        public bool NeedsReset { get; set; }
         public int Count { get; set; }
+        public bool NeedsReset { get; set; }
     }
 
     public interface INotifyCountChanged

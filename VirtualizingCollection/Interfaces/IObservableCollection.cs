@@ -13,7 +13,7 @@ namespace AlphaChiTech.VirtualizingCollection.Interfaces
     public interface IObservableCollection : ICollection, INotifyCollectionChanged
     {
         void Add(object item);
-        bool Remove(object item);
         void Clear();
+        bool Remove(object item);
     }
 }

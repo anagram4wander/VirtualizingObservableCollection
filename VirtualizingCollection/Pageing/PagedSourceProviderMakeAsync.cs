@@ -4,7 +4,8 @@ using AlphaChiTech.VirtualizingCollection.Interfaces;
 
 namespace AlphaChiTech.Virtualization.Pageing
 {
-    public class PagedSourceProviderMakeAsync<T> : BasePagedSourceProvider<T>, IPagedSourceProviderAsync<T>, IProviderPreReset
+    public class PagedSourceProviderMakeAsync<T> : BasePagedSourceProvider<T>, IPagedSourceProviderAsync<T>,
+        IProviderPreReset
     {
         public PagedSourceProviderMakeAsync()
         {
@@ -19,27 +20,43 @@ namespace AlphaChiTech.Virtualization.Pageing
             Action<int> actionOnReset = null,
             Func<int, int, int, T> funcGetPlaceHolder = null,
             Action actionOnBeforeReset = null
-            )
+        )
             : base(funcGetItemsAt, funcGetCount, null, funcContains, actionOnReset)
-            //: base(funcGetItemsAt, funcGetCount, funcIndexOf, actionOnReset)
+        //: base(funcGetItemsAt, funcGetCount, funcIndexOf, actionOnReset)
         {
             this.FuncGetPlaceHolder = funcGetPlaceHolder;
             this.ActionOnBeforeReset = actionOnBeforeReset;
-          this.FuncIndexOfAsync = funcIndexOfAsync;
+            this.FuncIndexOfAsync = funcIndexOfAsync;
             this.FuncContainsAsync = funcContainsAsync;
         }
 
-        public virtual void OnBeforeReset()
-        {
-            this.ActionOnBeforeReset?.Invoke();
-        }
-
         public Action ActionOnBeforeReset { get; set; }
+        public Func<T, Task<bool>> FuncContainsAsync { get; set; }
 
         public Func<int, int, int, T> FuncGetPlaceHolder { get; set; }
 
         public Func<T, Task<int>> FuncIndexOfAsync { get; set; }
-        public Func<T, Task<bool>> FuncContainsAsync { get; set; }
+
+        public Task<bool> ContainsAsync(T item)
+        {
+            return this.FuncContainsAsync?.Invoke(item) ?? default(Task<bool>);
+        }
+
+        public Task<int> GetCountAsync()
+        {
+            var tcs = new TaskCompletionSource<int>();
+
+            try
+            {
+                tcs.SetResult(this.Count);
+            }
+            catch (Exception e)
+            {
+                tcs.SetException(e);
+            }
+
+            return tcs.Task;
+        }
 
         public Task<PagedSourceItemsPacket<T>> GetItemsAtAsync(int pageoffset, int count, bool usePlaceholder)
         {
@@ -67,29 +84,14 @@ namespace AlphaChiTech.Virtualization.Pageing
             return ret;
         }
 
-        public Task<int> GetCountAsync()
+        public Task<int> IndexOfAsync(T item)
         {
-            var tcs = new TaskCompletionSource<int>();
-
-            try
-            {
-                tcs.SetResult(this.Count);
-            } catch(Exception e)
-            {
-                tcs.SetException(e);
-            }
-
-            return tcs.Task;
+            return this.FuncIndexOfAsync?.Invoke(item) ?? default(Task<int>);
         }
 
-      public Task<int> IndexOfAsync( T item )
-      {
-            return this.FuncIndexOfAsync?.Invoke(item) ?? default(Task<int>);
-      }
-
-        public Task<bool> ContainsAsync(T item)
+        public virtual void OnBeforeReset()
         {
-            return this.FuncContainsAsync?.Invoke(item) ?? default(Task<bool>);
+            this.ActionOnBeforeReset?.Invoke();
         }
     }
 }
