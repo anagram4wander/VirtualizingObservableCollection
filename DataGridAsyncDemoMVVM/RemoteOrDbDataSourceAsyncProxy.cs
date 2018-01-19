@@ -1,7 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using AlphaChiTech.Virtualization;
+using AlphaChiTech.VirtualizingCollection.Interfaces;
+using AlphaChiTech.VirtualizingCollection.Pageing;
 using DataGridAsyncDemoMVVM.filtersort;
 
 namespace DataGridAsyncDemoMVVM

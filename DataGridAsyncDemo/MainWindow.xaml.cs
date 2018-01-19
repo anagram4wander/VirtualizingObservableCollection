@@ -8,7 +8,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
-using AlphaChiTech.Virtualization;
+using AlphaChiTech.VirtualizingCollection;
+using AlphaChiTech.VirtualizingCollection.Pageing;
 using DataGridAsyncDemo.filtersort;
 using SortDescription = DataGridAsyncDemo.filtersort.SortDescription;
 

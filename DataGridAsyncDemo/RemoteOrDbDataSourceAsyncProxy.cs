@@ -1,3 +1,6 @@
+using AlphaChiTech.VirtualizingCollection.Interfaces;
+using AlphaChiTech.VirtualizingCollection.Pageing;
+
 namespace DataGridAsyncDemo
 {
   #region
@@ -5,7 +8,6 @@ namespace DataGridAsyncDemo
   using System;
   using System.Linq;
   using System.Threading.Tasks;
-  using AlphaChiTech.Virtualization;
   using filtersort;
 
   #endregion

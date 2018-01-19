@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+VisualStudioVersion = 15.0.27130.2024
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGridAsyncDemo", "DataGridAsyncDemo\DataGridAsyncDemo.csproj", "{B1235F30-C8A9-4A18-B870-A7F23F214039}"
 EndProject
@@ -12,9 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{90A3E4
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlphaChiTech.Virtualization.Net4", "AlphaChiTech.Virtualization.Net4\AlphaChiTech.Virtualization.Net4.csproj", "{ECEDC613-843A-4D9A-8123-BD9600C9118E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGridAsyncDemoMVVM", "DataGridAsyncDemoMVVM\DataGridAsyncDemoMVVM.csproj", "{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualizingCollection", "VirtualizingCollection\VirtualizingCollection.csproj", "{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,14 +26,14 @@ Global
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Release|Any CPU.Build.0 = Release|Any CPU
-		{ECEDC613-843A-4D9A-8123-BD9600C9118E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{ECEDC613-843A-4D9A-8123-BD9600C9118E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{ECEDC613-843A-4D9A-8123-BD9600C9118E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{ECEDC613-843A-4D9A-8123-BD9600C9118E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -2,7 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Data;
-using AlphaChiTech.Virtualization;
+using AlphaChiTech.VirtualizingCollection;
+using AlphaChiTech.VirtualizingCollection.Pageing;
 using DataGridAsyncDemoMVVM.filtersort;
 using GalaSoft.MvvmLight.Command;
 using SortDescription = DataGridAsyncDemoMVVM.filtersort.SortDescription;

@@ -1,9 +1,8 @@
 ﻿#region
-
 using System;
 using System.Windows;
 using System.Windows.Threading;
-using AlphaChiTech.Virtualization;
+using AlphaChiTech.VirtualizingCollection;
 
 #endregion
 
