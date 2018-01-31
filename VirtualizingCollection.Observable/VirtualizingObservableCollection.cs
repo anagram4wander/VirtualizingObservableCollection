@@ -1,4 +1,8 @@
-﻿using AlphaChiTech.Virtualization.Pageing;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Threading;
+using AlphaChiTech.Virtualization.Pageing;
 using AlphaChiTech.VirtualizingCollection;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
 
@@ -11,7 +15,7 @@ namespace AlphaChiTech.Virtualization
         ///     Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}" /> class.
         /// </summary>
         /// <param name="provider">The provider.</param>
-        public VirtualizingObservableCollection(IItemSourceProvider<T> provider) : base(provider)
+        public VirtualizingObservableReactiveCollection(IItemSourceProvider<T> provider) : base(provider)
         {
         }
 
@@ -19,7 +23,7 @@ namespace AlphaChiTech.Virtualization
         /// Initializes a new instance of the <see cref="VirtualizingObservableCollection{T}" /> class.
         /// </summary>
         /// <param name="asyncProvider">The asynchronous provider.</param>
-        public VirtualizingObservableCollection(IItemSourceProviderAsync<T> asyncProvider) : base(asyncProvider)
+        public VirtualizingObservableReactiveCollection(IItemSourceProviderAsync<T> asyncProvider) : base(asyncProvider)
         {
         }
 
@@ -33,7 +37,7 @@ namespace AlphaChiTech.Virtualization
         /// <param name="maxPages">The maximum pages.</param>
         /// <param name="maxDeltas">The maximum deltas.</param>
         /// <param name="maxDistance">The maximum distance.</param>
-        public VirtualizingObservableCollection(
+        public VirtualizingObservableReactiveCollection(
             IPagedSourceProvider<T> provider,
             IPageReclaimer<T> reclaimer = null,
             IPageExpiryComparer expiryComparer = null,
@@ -55,7 +59,7 @@ namespace AlphaChiTech.Virtualization
         /// <param name="maxDeltas">The maximum deltas.</param>
         /// <param name="maxDistance">The maximum distance.</param>
         /// //TODO Check implementation
-        public VirtualizingObservableCollection(
+        public VirtualizingObservableReactiveCollection(
             IPagedSourceObservableProvider<T> provider,
             IPageReclaimer<T> reclaimer = null,
             IPageExpiryComparer expiryComparer = null,
