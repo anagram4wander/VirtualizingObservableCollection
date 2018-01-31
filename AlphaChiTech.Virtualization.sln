@@ -16,8 +16,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGridAsyncDemoMVVM", "Da
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualizingCollection", "VirtualizingCollection\VirtualizingCollection.csproj", "{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualizingCollection.Observable", "VirtualizingCollection.Observable\VirtualizingCollection.Observable.csproj", "{CEE256D6-E8C0-4D4C-B289-2D19FABCC094}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualizingCollection.Tests", "VirtualizingCollection.Tests\VirtualizingCollection.Tests.csproj", "{DA20F632-94B1-48B6-A4BB-5262E3EC2973}"
 EndProject
 Global
@@ -38,9 +36,6 @@ Global
 		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CEE256D6-E8C0-4D4C-B289-2D19FABCC094}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CEE256D6-E8C0-4D4C-B289-2D19FABCC094}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CEE256D6-E8C0-4D4C-B289-2D19FABCC094}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Release|Any CPU.ActiveCfg = Release|Any CPU
