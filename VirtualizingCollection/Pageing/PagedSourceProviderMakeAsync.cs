@@ -20,7 +20,7 @@ namespace AlphaChiTech.Virtualization.Pageing
             Action<int> actionOnReset = null,
             Func<int, int, int, T> funcGetPlaceHolder = null,
             Action actionOnBeforeReset = null
-        ): base(funcGetItemsAt, funcGetCount, null, funcContains, actionOnReset)
+        ) : base(funcGetItemsAt, funcGetCount, null, funcContains, actionOnReset)
         {
             this.FuncGetPlaceHolder = funcGetPlaceHolder;
             this.ActionOnBeforeReset = actionOnBeforeReset;

@@ -26,6 +26,7 @@ namespace DataGridAsyncDemoMVVM.converters
                     sortDirection = null;
                     break;
             }
+
             sortingEventArgs.Column.SortDirection = sortDirection;
             sortingEventArgs.Handled = true;
 

@@ -34,11 +34,26 @@ namespace DataGridAsyncDemoMVVM
             this.SortCommand = new RelayCommand<MemberPathSortingDirection>(async o => await this.Sort(o));
         }
 
-        public ICollectionView MyDataVirtualizedAsyncFilterSortObservableCollectionCollectionView { get; }
-
         public RelayCommand<MemberPathFilterText> FilterCommand { get; }
 
+        public ICollectionView MyDataVirtualizedAsyncFilterSortObservableCollectionCollectionView { get; }
+
         public RelayCommand<MemberPathSortingDirection> SortCommand { get; }
+
+        private async Task Filter(MemberPathFilterText memberPathFilterText)
+        {
+            if (string.IsNullOrWhiteSpace(memberPathFilterText.FilterText))
+                this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.Remove(memberPathFilterText
+                    .MemberPath);
+            else
+                this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.Add(
+                    new FilterDescription(memberPathFilterText.MemberPath, memberPathFilterText.FilterText));
+            Interlocked.Increment(ref this._filterWaitingCount);
+            await Task.Delay(500);
+            if (Interlocked.Decrement(ref this._filterWaitingCount) != 0) return;
+            this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.OnCollectionReset();
+            this._myDataVirtualizedAsyncFilterSortObservableCollection.Clear();
+        }
 
         private async Task Sort(MemberPathSortingDirection memberPathSortingDirection)
         {
@@ -61,21 +76,6 @@ namespace DataGridAsyncDemoMVVM
                     break;
             }
 
-            this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.OnCollectionReset();
-            this._myDataVirtualizedAsyncFilterSortObservableCollection.Clear();
-        }
-
-        private async Task Filter(MemberPathFilterText memberPathFilterText)
-        {
-            if (string.IsNullOrWhiteSpace(memberPathFilterText.FilterText))
-                this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.Remove(memberPathFilterText
-                    .MemberPath);
-            else
-                this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.Add(
-                    new FilterDescription(memberPathFilterText.MemberPath, memberPathFilterText.FilterText));
-            Interlocked.Increment(ref this._filterWaitingCount);
-            await Task.Delay(500);
-            if (Interlocked.Decrement(ref this._filterWaitingCount) != 0) return;
             this._myRemoteOrDbDataSourceAsyncProxy.FilterDescriptionList.OnCollectionReset();
             this._myDataVirtualizedAsyncFilterSortObservableCollection.Clear();
         }

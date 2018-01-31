@@ -50,13 +50,6 @@ namespace DataGridAsyncDemoMVVM.filtersort
             }
         }
 
-        protected void OnCollectionChanged(NotifyCollectionChangedEventArgs arg)
-        {
-            var evnt = this.CollectionChanged;
-
-            evnt?.Invoke(this, arg);
-        }
-
         /// <summary>
         ///     If it exist, remove existing filter that apply on same property name. The add item arg at first position into
         ///     filter list.
@@ -73,6 +66,13 @@ namespace DataGridAsyncDemoMVVM.filtersort
                 this.OnCollectionChanged(
                     new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, removed, index));
             }
+        }
+
+        protected void OnCollectionChanged(NotifyCollectionChangedEventArgs arg)
+        {
+            var evnt = this.CollectionChanged;
+
+            evnt?.Invoke(this, arg);
         }
     }
 }

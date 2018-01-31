@@ -4,9 +4,9 @@ namespace AlphaChiTech.Virtualization.Actions
 {
     public class PlaceholderReplaceWA<T> : BaseActionVirtualization where T : class
     {
-        private readonly T _oldValue;
-        private readonly T _newValue;
         private readonly int _index;
+        private readonly T _newValue;
+        private readonly T _oldValue;
 
         readonly WeakReference _voc;
 
@@ -21,7 +21,7 @@ namespace AlphaChiTech.Virtualization.Actions
 
         public override void DoAction()
         {
-            var voc = (VirtualizingObservableCollection<T>)this._voc.Target;
+            var voc = (VirtualizingObservableCollection<T>) this._voc.Target;
 
             if (voc != null && this._voc.IsAlive)
             {
@@ -29,5 +29,4 @@ namespace AlphaChiTech.Virtualization.Actions
             }
         }
     }
-
 }

@@ -16,7 +16,6 @@ namespace AlphaChiTech.Virtualization
     public class VirtualizingObservableCollection<T> : IEnumerable, IEnumerable<T>, ICollection, ICollection<T>, IList,
         IList<T>, IObservableCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged where T : class
     {
-        
         IEnumerator IEnumerable.GetEnumerator()
         {
             return this.GetEnumerator();
@@ -53,7 +52,7 @@ namespace AlphaChiTech.Virtualization
                 var sc = new Guid().ToString();
 
                 this.BaseCollection.EnsureCountIsGotNonaSync();
-                
+
                 try
                 {
                     var count = this.BaseCollection.InternalGetCount();
@@ -62,7 +61,6 @@ namespace AlphaChiTech.Virtualization
                     this.Current = this.BaseCollection.InternalGetValue(this._iLoop++, sc);
                     if (this.Current == null) Debugger.Break();
                     return true;
-
                 }
                 catch (Exception)
                 {
@@ -602,7 +600,7 @@ namespace AlphaChiTech.Virtualization
         #region INotifyCollectionChanged Implementation
 
         public bool SupressEventErrors { get; set; } = false;
-        
+
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
         event NotifyCollectionChangedEventHandler INotifyCollectionChanged.CollectionChanged
@@ -617,7 +615,6 @@ namespace AlphaChiTech.Virtualization
         /// <param name="args">The <see cref="NotifyCollectionChangedEventArgs" /> instance containing the event data.</param>
         internal void RaiseCollectionChangedEvent(NotifyCollectionChangedEventArgs args)
         {
-
             if (this._bulkCount > 0)
             {
                 return;
@@ -920,10 +917,8 @@ namespace AlphaChiTech.Virtualization
             {
                 return this.Provider.GetAt(index, this, allowPlaceholder);
             }
-            else
-            {
-                return Task.Run(()=>this.ProviderAsync.GetAt(index, this, allowPlaceholder)).GetAwaiter().GetResult();
-            }
+
+            return Task.Run(() => this.ProviderAsync.GetAt(index, this, allowPlaceholder)).GetAwaiter().GetResult();
         }
 
         private T InternalSetValue(int index, T newValue)
@@ -1019,7 +1014,8 @@ namespace AlphaChiTech.Virtualization
 
         private int InternalIndexOf(T item)
         {
-            return this.Provider?.IndexOf(item) ?? Task.Run(() => this.ProviderAsync.IndexOf(item)).GetAwaiter().GetResult();
+            return this.Provider?.IndexOf(item) ??
+                   Task.Run(() => this.ProviderAsync.IndexOf(item)).GetAwaiter().GetResult();
         }
 
         private void EnsureCountIsGotNonaSync()

@@ -5,15 +5,15 @@ namespace AlphaChiTech.Virtualization.Actions
 {
     public class ReclaimPagesWA : BaseRepeatableActionVirtualization
     {
+        readonly string _sectionContext = "";
+
+        readonly WeakReference _wrProvider;
+
         public ReclaimPagesWA(IReclaimableService provider, string sectionContext)
             : base(VirtualActionThreadModelEnum.Background, true, TimeSpan.FromMinutes(1))
         {
             this._wrProvider = new WeakReference(provider);
         }
-
-        readonly WeakReference _wrProvider = null;
-
-        readonly string _sectionContext = "";
 
         public override void DoAction()
         {
@@ -36,5 +36,4 @@ namespace AlphaChiTech.Virtualization.Actions
             return ret;
         }
     }
-
 }

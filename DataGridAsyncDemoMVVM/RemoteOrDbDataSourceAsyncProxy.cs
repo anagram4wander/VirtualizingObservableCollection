@@ -35,6 +35,9 @@ namespace DataGridAsyncDemoMVVM
 
         #endregion
 
+        public bool IsSynchronized { get; }
+        public object SyncRoot { get; }
+
         #region fields
 
         private readonly RemoteOrDbDataSourceEmulation _remoteDatas;
@@ -137,8 +140,5 @@ namespace DataGridAsyncDemoMVVM
         }
 
         #endregion
-
-        public bool IsSynchronized { get; }
-        public object SyncRoot { get; }
     }
 }

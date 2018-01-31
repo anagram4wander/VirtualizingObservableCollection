@@ -20,6 +20,7 @@ namespace DataGridAsyncDemoMVVM.converters
                         return new MemberPathFilterText {MemberPath = columnSortMemberPath, FilterText = filterText};
                     }
                 }
+
             return null;
         }
     }

@@ -15,11 +15,10 @@ namespace VirtualizingCollection.Tests
 
         public void OnReset(int count)
         {
-            this._source.Clear();;
+            this._source.Clear();
+            ;
         }
 
-        public bool IsSynchronized { get; } = false;
-        public object SyncRoot =>this;
         public bool Contains(T item)
         {
             return this._source.Contains(item);
@@ -39,5 +38,8 @@ namespace VirtualizingCollection.Tests
         {
             return this._source.IndexOf(item);
         }
+
+        public bool IsSynchronized { get; } = false;
+        public object SyncRoot => this;
     }
 }

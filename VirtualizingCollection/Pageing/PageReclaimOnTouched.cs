@@ -54,7 +54,7 @@ namespace AlphaChiTech.Virtualization.Pageing
         public IEnumerable<ISourcePage<T>> ReclaimPages(IEnumerable<ISourcePage<T>> pages, int pagesNeeded,
             string sectionContext)
         {
-           return (from p in pages where p.CanReclaimPage orderby p.LastTouch select p).Take(pagesNeeded).ToList();
+            return (from p in pages where p.CanReclaimPage orderby p.LastTouch select p).Take(pagesNeeded).ToList();
         }
     }
 }

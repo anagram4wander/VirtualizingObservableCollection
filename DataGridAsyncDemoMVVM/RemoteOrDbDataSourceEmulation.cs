@@ -26,6 +26,11 @@ namespace DataGridAsyncDemoMVVM
             this.FilterDescriptionList.CollectionChanged += this.FilterDescriptionListOnCollectionChanged;
         }
 
+        public bool Contains(RemoteOrDbDataItem item)
+        {
+            return this._items.Contains(item);
+        }
+
         #region fields
 
         private readonly List<RemoteOrDbDataItem> _items = new List<RemoteOrDbDataItem>();
@@ -67,8 +72,10 @@ namespace DataGridAsyncDemoMVVM
                     catch
                     {
                     }
+
                     this._isFilteredItemsValid = true;
                 }
+
                 return this._orderedItems;
             }
         }
@@ -250,10 +257,5 @@ namespace DataGridAsyncDemoMVVM
         #endregion query builder
 
         #endregion filter & sort Descrioption list
-
-        public bool Contains(RemoteOrDbDataItem item)
-        {
-            return this._items.Contains(item);
-        }
     }
 }

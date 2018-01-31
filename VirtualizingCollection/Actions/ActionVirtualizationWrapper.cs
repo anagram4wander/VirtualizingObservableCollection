@@ -3,14 +3,14 @@
 namespace AlphaChiTech.Virtualization.Actions
 {
     /// <summary>
-    /// This is a VirtualAction that wraps an Action, optionally with a repeating schedule.
+    ///     This is a VirtualAction that wraps an Action, optionally with a repeating schedule.
     /// </summary>
     public class ActionVirtualizationWrapper : BaseRepeatableActionVirtualization
     {
-        private readonly Action _action = null;
+        private readonly Action _action;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ActionVirtualizationWrapper"/> class.
+        ///     Initializes a new instance of the <see cref="ActionVirtualizationWrapper" /> class.
         /// </summary>
         /// <param name="action">The action.</param>
         /// <param name="threadModel">The thread model.</param>
@@ -25,7 +25,7 @@ namespace AlphaChiTech.Virtualization.Actions
         }
 
         /// <summary>
-        /// Does the action.
+        ///     Does the action.
         /// </summary>
         public override void DoAction()
         {
@@ -37,7 +37,5 @@ namespace AlphaChiTech.Virtualization.Actions
                 a.Invoke();
             }
         }
-
     }
-
 }

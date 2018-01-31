@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Specialized;
-using AlphaChiTech.Virtualization;
 
 namespace AlphaChiTech.Virtualization.Actions
 {
@@ -16,13 +15,13 @@ namespace AlphaChiTech.Virtualization.Actions
 
         public override void DoAction()
         {
-            var voc = (VirtualizingObservableCollection<T>)this._voc.Target;
+            var voc = (VirtualizingObservableCollection<T>) this._voc.Target;
 
             if (voc != null && this._voc.IsAlive)
             {
-                voc.RaiseCollectionChangedEvent(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                voc.RaiseCollectionChangedEvent(
+                    new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
             }
         }
-
     }
 }

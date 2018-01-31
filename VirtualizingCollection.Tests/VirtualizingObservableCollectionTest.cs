@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using AlphaChiTech.Virtualization;
 using NUnit.Framework;
 
@@ -13,13 +12,13 @@ namespace VirtualizingCollection.Tests
         public VirtualizingObservableCollectionTest()
         {
             this._vc = new VirtualizingObservableCollection<TestItem>(
-                new ItemSourceProvider<TestItem>(Enumerable.Range(0,100).Select(i => new TestItem())));
+                new ItemSourceProvider<TestItem>(Enumerable.Range(0, 100).Select(i => new TestItem())));
         }
 
         [Test]
         public void _Count_100()
         {
-            Assert.AreEqual(100,this._vc.Count);
+            Assert.AreEqual(100, this._vc.Count);
         }
 
         [Test]

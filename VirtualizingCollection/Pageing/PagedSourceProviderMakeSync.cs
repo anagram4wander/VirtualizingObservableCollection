@@ -83,19 +83,17 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public virtual int IndexOf(T item)
         {
-
             if (this.FuncIndexOf != null)
             {
                 return this.FuncIndexOf.Invoke(item);
             }
-            else if (this.FuncIndexOfAsync != null)
+
+            if (this.FuncIndexOfAsync != null)
             {
                 return Task.Run(() => this.FuncIndexOfAsync.Invoke(item)).GetAwaiter().GetResult();
             }
-            else
-            {
-                return Task.Run(() => this.IndexOfAsync(item)).GetAwaiter().GetResult();
-            }
+
+            return Task.Run(() => this.IndexOfAsync(item)).GetAwaiter().GetResult();
         }
 
         public Task<bool> ContainsAsync(T item)

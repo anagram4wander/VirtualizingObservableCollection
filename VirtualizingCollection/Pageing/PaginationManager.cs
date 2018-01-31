@@ -31,44 +31,6 @@ namespace AlphaChiTech.Virtualization.Pageing
         private int _localCount;
         private int _pageSize = 100;
 
-        public async Task<int> GetCountAsync()
-        {
-            this._hasGotCount = true;
-            if (!this.IsAsync)
-            {
-                return this.Provider.Count;
-            }
-            else
-            {
-                return await this.ProviderAsync.GetCountAsync();
-            }
-        }
-
-        private async void GetCountAsync(CancellationTokenSource cts)
-        {
-            if (!cts.IsCancellationRequested)
-            {
-                var ret = await this.ProviderAsync.GetCountAsync();
-
-                if (!cts.IsCancellationRequested)
-                {
-                    //TODO<-lock (this.SyncRoot)
-                    lock (this)
-                    {
-                        this._hasGotCount = true;
-                        this.LocalCount = ret;
-                    }
-                }
-
-                if (!cts.IsCancellationRequested)
-                {
-                    this.RaiseCountChanged(true, this.LocalCount);
-                }
-            }
-
-            this.RemovePageRequest(int.MinValue);
-        }
-
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="PaginationManager{T}" /> class.
@@ -204,7 +166,17 @@ namespace AlphaChiTech.Virtualization.Pageing
             set => this._localCount = value;
         }
 
-       
+        public async Task<int> GetCountAsync()
+        {
+            this._hasGotCount = true;
+            if (!this.IsAsync)
+            {
+                return this.Provider.Count;
+            }
+
+            return await this.ProviderAsync.GetCountAsync();
+        }
+
 
         /// <summary>
         ///     Resets the specified count.
@@ -279,7 +251,9 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
             }
 
-            return !this.IsAsync ? this.Provider.Contains(item) : this.ProviderAsync.ContainsAsync(item).GetAwaiter().GetResult();
+            return !this.IsAsync
+                ? this.Provider.Contains(item)
+                : this.ProviderAsync.ContainsAsync(item).GetAwaiter().GetResult();
         }
 
         public T GetAt(int index, object voc, bool usePlaceholder = true)
@@ -314,6 +288,7 @@ namespace AlphaChiTech.Virtualization.Pageing
                     this.GetCountAsync(cts);
                 }
             }
+
             this._hasGotCount = true;
             return this.LocalCount;
         }
@@ -340,7 +315,9 @@ namespace AlphaChiTech.Virtualization.Pageing
                 }
             }
 
-            return !this.IsAsync ? this.Provider.IndexOf(item) : this.ProviderAsync.IndexOfAsync(item).GetAwaiter().GetResult();
+            return !this.IsAsync
+                ? this.Provider.IndexOf(item)
+                : this.ProviderAsync.IndexOfAsync(item).GetAwaiter().GetResult();
 
             //return this.ProviderAsync.IndexOf(item);
         }
@@ -475,13 +452,15 @@ namespace AlphaChiTech.Virtualization.Pageing
                 //TODO <-
                 if (nullTryCount <= 0) //inconsistency, notify reset collection
                 {
-                    this.OnProviderCollectionChanged(this.Provider, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+                    this.OnProviderCollectionChanged(this.Provider,
+                        new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
                     return ret;
                 }
+
                 Thread.Sleep(100);
                 return this.GetAt(index, voc, usePlaceholder, --nullTryCount);
             }
-            
+
             return ret;
         }
 
@@ -611,15 +590,12 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <exception cref="System.NotSupportedException"></exception>
         protected IEditableProvider<T> GetProviderAsEditable()
         {
-
             if (this.Provider != null)
             {
                 return this.Provider as IEditableProvider<T>;
             }
-            else
-            {
-                return this.ProviderAsync as IEditableProvider<T>;
-            }
+
+            return this.ProviderAsync as IEditableProvider<T>;
         }
 
 
@@ -848,7 +824,31 @@ namespace AlphaChiTech.Virtualization.Pageing
             newPage.PageFetchState = PageFetchStateEnum.Fetched;
         }
 
-      
+        private async void GetCountAsync(CancellationTokenSource cts)
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                var ret = await this.ProviderAsync.GetCountAsync();
+
+                if (!cts.IsCancellationRequested)
+                {
+                    //TODO<-lock (this.SyncRoot)
+                    lock (this)
+                    {
+                        this._hasGotCount = true;
+                        this.LocalCount = ret;
+                    }
+                }
+
+                if (!cts.IsCancellationRequested)
+                {
+                    this.RaiseCountChanged(true, this.LocalCount);
+                }
+            }
+
+            this.RemovePageRequest(int.MinValue);
+        }
+
 
         private void OnProviderCollectionChanged(object sender,
             NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
@@ -902,7 +902,8 @@ namespace AlphaChiTech.Virtualization.Pageing
         /// <param name="isAlreadyInSourceCollection"></param>
         /// <param name="createPageIfNotExist"></param>
         /// <returns></returns>
-        public int OnAppend(T item, object timestamp, bool isAlreadyInSourceCollection = false, bool createPageIfNotExist = false)
+        public int OnAppend(T item, object timestamp, bool isAlreadyInSourceCollection = false,
+            bool createPageIfNotExist = false)
         {
             var index = this.LocalCount;
 
@@ -1004,14 +1005,16 @@ namespace AlphaChiTech.Virtualization.Pageing
                             // Fill with placeholders
                             for (var loop = 0; loop < pageSize; loop++)
                             {
-                                var placeHolder = this.ProviderAsync.GetPlaceHolder(newPage.Page * pageSize + loop, newPage.Page,loop);
+                                var placeHolder = this.ProviderAsync.GetPlaceHolder(newPage.Page * pageSize + loop,
+                                    newPage.Page, loop);
                                 newPage.Append(placeHolder, null, this.ExpiryComparer);
                             }
 
                             ret = newPage;
 
                             var cts = this.StartPageRequest(newPage.Page);
-                            Task.Run(() => this.DoRealPageGet(voc, newPage, pageOffset, index, cts), cts.Token).ConfigureAwait(false);
+                            Task.Run(() => this.DoRealPageGet(voc, newPage, pageOffset, index, cts), cts.Token)
+                                .ConfigureAwait(false);
                         }
                         else
                         {
@@ -1047,7 +1050,8 @@ namespace AlphaChiTech.Virtualization.Pageing
             return newPage;
         }
 
-        private async Task DoRealPageGet(object voc, ISourcePage<T> page, int pageOffset, int index, CancellationTokenSource cts)
+        private async Task DoRealPageGet(object voc, ISourcePage<T> page, int pageOffset, int index,
+            CancellationTokenSource cts)
         {
             var realVoc = (VirtualizingObservableCollection<T>) voc;
             var listOfReplaces = new List<PlaceholderReplaceWA<T>>();
