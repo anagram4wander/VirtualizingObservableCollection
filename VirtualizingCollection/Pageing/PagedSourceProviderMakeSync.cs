@@ -64,21 +64,21 @@ namespace AlphaChiTech.Virtualization.Pageing
             }
             else if (this.FuncContainsAsync != null)
             {
-                ret = Task.Run(() => this.FuncContainsAsync.Invoke(item)).Result;
+                ret = Task.Run(() => this.FuncContainsAsync.Invoke(item)).GetAwaiter().GetResult();
             }
             else
             {
-                ret = Task.Run(() => this.FuncContainsAsync(item)).Result;
+                ret = Task.Run(() => this.FuncContainsAsync(item)).GetAwaiter().GetResult();
             }
 
             return ret;
         }
 
-        public int Count => Task.Run(this.GetCountAsync).Result;
+        public int Count => Task.Run(this.GetCountAsync).GetAwaiter().GetResult();
 
         public PagedSourceItemsPacket<T> GetItemsAt(int pageoffset, int count, bool usePlaceholder)
         {
-            return Task.Run(() => this.GetItemsAtAsync(pageoffset, count, usePlaceholder)).Result;
+            return Task.Run(() => this.GetItemsAtAsync(pageoffset, count, usePlaceholder)).GetAwaiter().GetResult();
         }
 
         public virtual int IndexOf(T item)
@@ -90,11 +90,11 @@ namespace AlphaChiTech.Virtualization.Pageing
             }
             else if (this.FuncIndexOfAsync != null)
             {
-                return Task.Run(() => this.FuncIndexOfAsync.Invoke(item)).Result;
+                return Task.Run(() => this.FuncIndexOfAsync.Invoke(item)).GetAwaiter().GetResult();
             }
             else
             {
-                return Task.Run(() => this.IndexOfAsync(item)).Result;
+                return Task.Run(() => this.IndexOfAsync(item)).GetAwaiter().GetResult();
             }
         }
 
@@ -120,7 +120,7 @@ namespace AlphaChiTech.Virtualization.Pageing
 
         public virtual async Task<int> IndexOfAsync(T item)
         {
-            return await Task.FromResult(1);
+            return await Task.FromResult(-1);
         }
 
         public virtual void OnBeforeReset()
