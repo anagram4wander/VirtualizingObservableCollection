@@ -265,5 +265,10 @@ namespace DataGridAsyncDemo
     #endregion query builder
 
     #endregion filter & sort Descrioption list
+
+      public bool Contains(RemoteOrDbDataItem item)
+      {
+          return this._items.Contains(item);
+      }
   }
 }

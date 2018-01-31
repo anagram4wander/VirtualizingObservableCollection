@@ -8,8 +8,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Threading;
+using AlphaChiTech.Virtualization;
+using AlphaChiTech.Virtualization.Pageing;
 using AlphaChiTech.VirtualizingCollection;
-using AlphaChiTech.VirtualizingCollection.Pageing;
 using DataGridAsyncDemo.filtersort;
 using SortDescription = DataGridAsyncDemo.filtersort.SortDescription;
 
@@ -172,8 +173,8 @@ namespace DataGridAsyncDemo
         {
           _myRemoteOrDbDataSourceAsyncProxy = new RemoteOrDbDataSourceAsyncProxy( new RemoteOrDbDataSourceEmulation() );
                     _myDataVirtualizedAsyncFilterSortObservableCollection =
-                      new VirtualizingObservableCollection<RemoteOrDbDataItem>(
-                        new PaginationManager<RemoteOrDbDataItem>(_myRemoteOrDbDataSourceAsyncProxy, pageSize: 10, maxPages:2) );
+                        new VirtualizingObservableCollection<RemoteOrDbDataItem>(
+                            new PaginationManager<RemoteOrDbDataItem>(_myRemoteOrDbDataSourceAsyncProxy, pageSize: 10, maxPages: 2));
         }
         return _myDataVirtualizedAsyncFilterSortObservableCollection;
       }

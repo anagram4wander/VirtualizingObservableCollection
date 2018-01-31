@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AlphaChiTech.Virtualization.Pageing;
 using AlphaChiTech.VirtualizingCollection.Interfaces;
-using AlphaChiTech.VirtualizingCollection.Pageing;
 using DataGridAsyncDemoMVVM.filtersort;
 
 namespace DataGridAsyncDemoMVVM
@@ -50,6 +50,11 @@ namespace DataGridAsyncDemoMVVM
             return this._remoteDatas.FilteredOrderedItems.IndexOf(item);
         }
 
+        public bool Contains(RemoteOrDbDataItem item)
+        {
+            return this._remoteDatas.Contains(item);
+        }
+
         public PagedSourceItemsPacket<RemoteOrDbDataItem> GetItemsAt(int pageoffset, int count, bool usePlaceholder)
         {
             Task.Delay(50 + (int) Math.Round(this._rand.NextDouble() * 100)).Wait(); // Just to slow it down !
@@ -73,6 +78,11 @@ namespace DataGridAsyncDemoMVVM
         #endregion
 
         #region public members
+
+        public Task<bool> ContainsAsync(RemoteOrDbDataItem item)
+        {
+            throw new NotImplementedException();
+        }
 
         public Task<int> GetCountAsync()
         {
@@ -127,5 +137,8 @@ namespace DataGridAsyncDemoMVVM
         }
 
         #endregion
+
+        public bool IsSynchronized { get; }
+        public object SyncRoot { get; }
     }
 }
