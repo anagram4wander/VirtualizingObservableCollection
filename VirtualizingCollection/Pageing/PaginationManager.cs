@@ -957,8 +957,9 @@ namespace AlphaChiTech.Virtualization.Pageing
             var edit = this.GetProviderAsEditable();
             if (edit != null && !isAlreadyInSourceCollection)
             {
-                edit.OnInsert(index, item, timestamp);
+                //==>edit.OnInsert(index, item, timestamp);
                 //TODO<-edit.OnAppend(item, timestamp);
+                edit.OnAppend(item, timestamp);
             }
             else if (!isAlreadyInSourceCollection)
             {
