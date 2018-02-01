@@ -13,12 +13,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.Activities">
-      <HintPath>..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\System.Activities.dll</HintPath>
-    </Reference>
-    <Reference Include="WindowsBase">
-      <HintPath>..\..\..\..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7\WindowsBase.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Microsoft.Activities.Extensions" Version="2.0.6.9" />
+    <PackageReference Include="WindowsBase" Version="4.6.1055" />
   </ItemGroup>
 
 </Project>
