@@ -1,16 +1,16 @@
+using System.ComponentModel;
+
 namespace DataGridAsyncDemo.filtersort
 {
-  using System.ComponentModel;
-
-  public class SortDescription : IFilterOrderDescription
-  {
-    public SortDescription( string propertyName, ListSortDirection? direction )
+    public class SortDescription : IFilterOrderDescription
     {
-      Direction = direction;
-      PropertyName = propertyName;
-    }
+        public SortDescription(string propertyName, ListSortDirection? direction)
+        {
+            this.Direction = direction;
+            this.PropertyName = propertyName;
+        }
 
-    public ListSortDirection? Direction { get; set; }
-    public string PropertyName { get; set; }
-  }
+        public ListSortDirection? Direction { get; set; }
+        public string PropertyName { get; set; }
+    }
 }

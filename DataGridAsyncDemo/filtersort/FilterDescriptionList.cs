@@ -1,12 +1,12 @@
+using System.Collections.Specialized;
+
 namespace DataGridAsyncDemo.filtersort
 {
-  using System.Collections.Specialized;
-
-  public class FilterDescriptionList : DescriptionList<FilterDescription>
-  {
-    public void OnCollectionReset()
+    public class FilterDescriptionList : DescriptionList<FilterDescription>
     {
-      OnCollectionChanged( new NotifyCollectionChangedEventArgs( NotifyCollectionChangedAction.Reset ) );
+        public void OnCollectionReset()
+        {
+            this.OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+        }
     }
-  }
 }
