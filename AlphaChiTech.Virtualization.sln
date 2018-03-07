@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlphaChiTech.Virtualization", "AlphaChiTech.Virtualization\AlphaChiTech.Virtualization.csproj", "{5455EE53-36B9-48E8-B1F0-EB7C6ABB7A57}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGridAsyncDemo", "DataGridAsyncDemo\DataGridAsyncDemo.csproj", "{B1235F30-C8A9-4A18-B870-A7F23F214039}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{90A3E488-4EFC-4E8C-BE36-B03651A95625}"
@@ -14,22 +12,44 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{90A3E4
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataGridAsyncDemoMVVM", "DataGridAsyncDemoMVVM\DataGridAsyncDemoMVVM.csproj", "{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VirtualizingCollection", "VirtualizingCollection\VirtualizingCollection.csproj", "{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualizingCollection.Tests", "VirtualizingCollection.Tests\VirtualizingCollection.Tests.csproj", "{DA20F632-94B1-48B6-A4BB-5262E3EC2973}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F3339508-BAE9-47BD-B013-BF4C334B729B}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5455EE53-36B9-48E8-B1F0-EB7C6ABB7A57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5455EE53-36B9-48E8-B1F0-EB7C6ABB7A57}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5455EE53-36B9-48E8-B1F0-EB7C6ABB7A57}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5455EE53-36B9-48E8-B1F0-EB7C6ABB7A57}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1235F30-C8A9-4A18-B870-A7F23F214039}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE19AAA5-881C-48BE-A8E7-A8799F5C4BD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8D58C1D-2596-45AD-83BD-E0D5C9FA7F69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA20F632-94B1-48B6-A4BB-5262E3EC2973}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D457F9E2-2C21-4C1F-93EA-EE4DAD2CA2E4}
 	EndGlobalSection
 EndGlobal

@@ -1,14 +1,14 @@
 namespace DataGridAsyncDemo.filtersort
 {
-  public class FilterDescription : IFilterOrderDescription
-  {
-    public FilterDescription( string propertyName, string filter )
+    public class FilterDescription : IFilterOrderDescription
     {
-      PropertyName = propertyName;
-      Filter = filter;
-    }
+        public FilterDescription(string propertyName, string filter)
+        {
+            this.PropertyName = propertyName;
+            this.Filter = filter;
+        }
 
-    public string Filter { get; set; }
-    public string PropertyName { get; set; }
-  }
+        public string Filter { get; set; }
+        public string PropertyName { get; set; }
+    }
 }

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net451;netstandard2.0;</TargetFrameworks>
+    <RootNamespace>AlphaChiTech.VirtualizingCollection</RootNamespace>
+    <AssemblyName>AlphaChiTech.VirtualizingCollection</AssemblyName>
+    <Version>1.2.0</Version>
+    <Copyright>Copyright ©  2015 AlphaChi technology</Copyright>
+    <Company>AlphaChi Technology</Company>
+    <Authors />
+    <PackageId>AlphaChiTech.VirtualizingCollection</PackageId>
+    <Product>AlphaChiTech.VirtualizingCollection</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Activities.Extensions" Version="2.0.6.9" />
+    <PackageReference Include="WindowsBase" Version="4.6.1055" />
+  </ItemGroup>
+
+</Project>
